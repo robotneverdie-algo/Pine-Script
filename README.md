@@ -4,6 +4,8 @@ A library of trading indicators, strategies and code snippets for Pine Script pr
 
 ---
 ## Strategies
+* [Template Simple Strategy](/Strategies/Template%20Simple%20Strategy.pine)
+> An simple long/short strategy template file.
 
 ---
 ## Indicators

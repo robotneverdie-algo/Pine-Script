@@ -1,0 +1,106 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © RobotNeverDie
+
+//@version=4
+strategy("Template Simple Strategy", shorttitle="Template Simple Strategy", overlay=true, pyramiding=100, initial_capital=10000, default_qty_type=strategy.percent_of_equity, default_qty_value=3)
+
+// Description:
+// An simple long/short strategy template file.
+//
+// More at https://github.com/robotneverdie-algo/Pine-Script
+
+//{=================================================================================== Misc. Functions =====================================================================================}
+
+source(x) =>
+    if x == "open"
+        open
+    else
+        if x == "high"
+            high
+        else
+            if x == "low"
+                low
+            else
+                if x == "close"
+                    close
+                else
+                    if x == "hl2"
+                        hl2
+                    else
+                        if x == "hlc3"
+                            hlc3
+                        else
+                            if x == "ohlc4"
+                                ohlc4
+                            else
+                                vwap
+
+//{=================================================================================== Strategy Setting =====================================================================================}
+
+_strategy_header =input(true, type=input.bool, title="{====================== Strategy Settings =======================}")
+
+_trades_count = input(1, minval=1, title="Strategy: Trades Count")
+_src = input("ohlc4", options=["open", "high", "low", "close", "hl2", "hlc3", "ohlc4", "vwap"], title="Strategy: Source")
+_use_tf = input(false, type=input.bool, title="Strategy: Use Different Timeframe")
+_tf = input("240", type=input.resolution, title="Strategy: Timeframe")
+
+//{==================================================================================== Strategy Logic =====================================================================================}
+
+_source = _use_tf ? security(syminfo.tickerid, _tf, source(_src)) : source(_src)
+
+//{=================================================================================== Strategy Signal =====================================================================================}
+
+_long = false
+_short = false
+
+_xlong = false
+_xshort = false
+
+var _long_count = 0
+var _short_count = 0
+
+var _when_long = 0
+var _when_short = 0
+var _when_exit = 0
+
+_in_long = _when_long > _when_short and _when_long > _when_exit
+_in_short = _when_short > _when_long and _when_short > _when_exit
+_in_exit = _when_exit > _when_long and _when_exit > _when_short
+
+if _long
+    if _in_short or _in_exit
+        _long_count := 1
+    else
+        _long_count := nz(_long_count[1]) + 1
+    _short_count := 0
+    _in_short := false
+    if _long_count <= _trades_count
+        _when_long := time
+
+if _short
+    if _in_long or _in_exit
+        _short_count := 1
+    else
+        _short_count := nz(_short_count[1]) + 1
+    _long_count := 0
+    _in_long := false
+    if _short_count <= _trades_count
+        _when_short := time
+
+if (_xlong and _in_long) or (_xshort and _in_short)
+    _when_exit := time
+
+_enter_long = _when_long == time
+_enter_short = _when_short == time
+_exit_trade = _when_exit == time
+
+strategy.entry("Long", strategy.long, when=_enter_long)
+strategy.entry("Short", strategy.short, when=_enter_short)
+strategy.close_all(when=_exit_trade)
+
+//{==================================================================================== Strategy Draw ======================================================================================}
+
+plotshape(_enter_long, style=shape.triangleup, location=location.bottom, color=#1ca168)
+plotshape(_enter_short, style=shape.triangleup, location=location.bottom, color=#ce2020)
+plotshape(_exit_trade, style=shape.triangledown, location=location.bottom, color=#ffc100)
+barcolor(_enter_long ? #1ca168 : _enter_short ? #ce2020 : _exit_trade ? #ffc100 : na)
