@@ -37,7 +37,7 @@ source(x) =>
 
 //{=================================================================================== Strategy Setting =====================================================================================}
 
-_strategy_header =input(true, type=input.bool, title="{====================== Strategy Settings =======================}")
+_strategy_header = input(true, type=input.bool, title="{====================== Strategy Settings =======================}")
 
 _trades_count = input(1, minval=1, title="Strategy: Trades Count")
 _src = input("ohlc4", options=["open", "high", "low", "close", "hl2", "hlc3", "ohlc4", "vwap"], title="Strategy: Source")

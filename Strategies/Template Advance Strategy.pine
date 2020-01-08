@@ -1,0 +1,302 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © RobotNeverDie
+
+//@version=4
+strategy("Template Advance Strategy", shorttitle="Template Advance Strategy", overlay=true, pyramiding=100, initial_capital=10000, default_qty_type=strategy.percent_of_equity, default_qty_value=3)
+
+// Description:
+// An advance long/short strategy template file.
+// The template file layout an trend following trading system. [1] [2]
+// * Trend Following - An indicator that identify trend's direction, most likely an moving average.
+// * Trend Confirmation - Most trend following indicator are prone to whipsaw, so you what to confirm the movement with something like an momentum indicator.
+// * Entry/Exit - Now that you have an trend directional bias you may want to find an optimal entry/exit strategy this is where overbought/oversold indicator come in handy.
+// * Stop-Loss and Profit-Taking - We need to determine an method to take profit on a winning trade and an loss on an losing trade. [3]
+// * Position Sizing - To control risk and maximize gains we must determine what size of a position we are willing to risk. [4]
+//
+// References/Notes:
+// [1] https://www.babypips.com/learn/forex/design-your-trading-system
+// [2] https://www.investopedia.com/articles/forex/10/indicators-fx-traders-must-know.asp
+// [3] I provided an method using bollinger bands with an stop loss and three profit-taking price levels. Each time an tp level is hit you will reduce your position and move the stop-loss to the old price level.
+// [4] I use the formula: Position Size = Risk Amount / Distance to Stop Loss. https://medium.com/@cryptocreddy/comprehensive-guide-to-position-size-and-leverage-2e27764ce9e0
+//
+// More at https://github.com/robotneverdie-algo/Pine-Script
+
+//{=================================================================================== Misc. Functions =====================================================================================}
+
+source(x) =>
+    if x == "open"
+        open
+    else
+        if x == "high"
+            high
+        else
+            if x == "low"
+                low
+            else
+                if x == "close"
+                    close
+                else
+                    if x == "hl2"
+                        hl2
+                    else
+                        if x == "hlc3"
+                            hlc3
+                        else
+                            if x == "ohlc4"
+                                ohlc4
+                            else
+                                vwap
+// String format of min tick value for the current symbol to eight decimal places.
+min_tick_format() =>
+    format = "#.#"
+    for i = 1 to 8
+        if pow(10, i) * syminfo.mintick < 1
+            format := format + "#"
+    format
+
+// Draw an panel to display infomation on chart.
+info_panel(x, y, panel_color, text_color, line_num, message) =>
+    content = ""
+    for l = line_num to 0
+        content := content + "\n"
+    content := content + message
+    var label panel = na
+    label.delete(panel)
+    panel := label.new(x, y, text=content, xloc=xloc.bar_time, yloc=yloc.price, color=panel_color, textcolor=text_color, style=label.style_labelup)
+
+// An selection function to return the bands [upper, lower] of selected type.
+bands(x, type, len, mult) =>
+    if type == "bollinger"
+        // Bollinger Bands
+        basis = sma(x, len)
+        volatility = stdev(x, len)
+        [basis + (volatility * mult), basis - (volatility * mult)]
+    else
+        if type == "keltner"
+            // Keltner Channels
+            basis = ema(x, len)
+            volatility = atr(len)
+            [basis + (volatility * mult), basis - (volatility * mult)]
+        else
+            // Average True Range
+            basis = x
+            volatility = atr(len)
+            [basis + (volatility * mult), basis - (volatility * mult)]
+
+// percentage difference
+pct_diff(x, y) =>
+    ((x - y) / avg(x, y)) * 100
+
+//{=================================================================================== Strategy Setting =====================================================================================}
+
+_strategy_header = input(true, type=input.bool, title="{====================== Strategy Settings =======================}")
+
+_trades_count = input(1, minval=1, title="Strategy: Trades Count")
+_src = input("ohlc4", options=["open", "high", "low", "close", "hl2", "hlc3", "ohlc4", "vwap"], title="Strategy: Source")
+_use_tf = input(false, type=input.bool, title="Strategy: Use Different Timeframe")
+_tf = input("240", type=input.resolution, title="Strategy: Timeframe")
+
+//{=============================================================================== Trend Following Setting =================================================================================}
+
+_following_header = input(true, type=input.bool, title="{==================== Trend Following Setting ===================}")
+
+//{============================================================================== Trend Confirmation Setting ===============================================================================}
+
+_confirmation_header = input(true, type=input.bool, title="{================== Trend Confirmation Setting ==================}")
+
+//{================================================================================== Entry/Exit Setting ===================================================================================}
+
+_entry_exit_header = input(true, type=input.bool, title="{====================== Entry/Exit Setting ======================}")
+
+//{========================================================================= Stop-Loss and Profit-Taking Setting ===========================================================================}
+
+_sl_tp_header = input(true, type=input.bool, title="{============== Stop-Loss and Profit-Taking Setting =============}")
+_bands_type = input("bollinger", options=["bollinger", "keltner", "atr"], title="Profit/Loss: Bands Type")
+_bands_len = input(20, title="Profit/Loss: Bands Length")
+
+_stp_mult = input(1, minval=0.1, step=0.1, title="Profit/Loss: Stop-Loss Multiplier")
+_tp1_mult = input(1, minval=0.1, step=0.1, title="Profit/Loss: Take-Profit TP1 Multiplier")
+_tp2_mult = input(2, minval=0.1, step=0.1, title="Profit/Loss: Take-Profit TP2 Multiplier")
+_tp3_mult = input(3, minval=0.1, step=0.1, title="Profit/Loss: Take-Profit TP3 Multiplier")
+
+_tp1_percent = input(50, minval=1, step=1, title="TP1: Reduce Position Percent")
+_tp2_percent = input(30, minval=1, step=1, title="TP2: Reduce Position Percent")
+_tp3_trailing = input(true, type=input.bool, title="TP3: Use Trailing Stop-Loss")
+
+//{=============================================================================== Position Sizing Setting =================================================================================}
+
+_position_sizing_header = input(true, type=input.bool, title="{==================== Position Sizing Setting ===================}")
+_capital = input(10000, minval=0.00000001, title="Sizing: Capital")
+_risk = input(10, minval=0.01, maxval=100, step=0.01, title="Sizing: Risk Percent") / 100
+
+
+
+//{==================================================================================== Strategy Logic =====================================================================================}
+
+_source = _use_tf ? security(syminfo.tickerid, _tf, source(_src)) : source(_src)
+// Note: Unable to call security function with an multi variable function
+[_stp_upper, _stp_lower] = bands(_source, _bands_type, _bands_len, _stp_mult)
+[_tp1_upper, _tp1_lower] = bands(_source, _bands_type, _bands_len, _tp1_mult)
+[_tp2_upper, _tp2_lower] = bands(_source, _bands_type, _bands_len, _tp2_mult)
+[_tp3_upper, _tp3_lower] = bands(_source, _bands_type, _bands_len, _tp3_mult)
+
+//{=================================================================================== Strategy Signal =====================================================================================}
+
+_long = false
+_short = false
+
+_xlong = false
+_xshort = false
+
+var _long_count = 0
+var _short_count = 0
+
+var _when_long = 0
+var _when_short = 0
+var _when_exit = 0
+
+_in_long = _when_long > _when_short and _when_long > _when_exit
+_in_short = _when_short > _when_long and _when_short > _when_exit
+_in_exit = _when_exit > _when_long and _when_exit > _when_short
+
+if _long
+    if _in_short or _in_exit
+        _long_count := 1
+    else
+        _long_count := nz(_long_count[1]) + 1
+    _short_count := 0
+    _in_short := false
+    if _long_count <= _trades_count
+        _when_long := time
+
+if _short
+    if _in_long or _in_exit
+        _short_count := 1
+    else
+        _short_count := nz(_short_count[1]) + 1
+    _long_count := 0
+    _in_long := false
+    if _short_count <= _trades_count
+        _when_short := time
+
+if (_xlong and _in_long) or (_xshort and _in_short)
+    _when_exit := time
+
+_enter_long = _when_long == time
+_enter_short = _when_short == time
+_exit_trade = _when_exit == time
+
+var _entry_price = 0.0
+var float _stop = na
+var float _tp1 = na
+var float _tp2 = na
+var float _tp3 = na
+
+var float _hit_stop = na
+var float _hit_tp1 = na
+var float _hit_tp2 = na
+var float _hit_tp3 = na
+
+if _enter_long or _in_long
+    if _enter_long
+        _entry_price := close
+        _stop := _stp_lower
+        _tp1 := _tp1_upper
+        _tp2 := _tp2_upper
+        _tp3 := _tp3_upper
+    _hit_stop := crossunder(low, _stop) ? _stop : na
+    _hit_tp1 := crossover(high, _tp1) ? _tp1 : na
+    _hit_tp2 := crossover(high, _tp2) ? _tp2 : na
+    _hit_tp3 := crossover(high, _tp3) ? _tp3 : na
+else
+    if _enter_short or _in_short
+        if _enter_short
+            _entry_price := close
+            _stop := _stp_upper
+            _tp1 := _tp1_lower
+            _tp2 := _tp2_lower
+            _tp3 := _tp3_lower
+        _hit_stop := crossover(high, _stop) ? _stop : na
+        _hit_tp1 := crossunder(low, _tp1) ? _tp1 : na
+        _hit_tp2 := crossunder(low, _tp2) ? _tp2 : na
+        _hit_tp3 := crossunder(low, _tp3) ? _tp3 : na
+    else
+        if _exit_trade or _in_exit
+            _entry_price := na
+            _stop := na
+            _tp1 := na
+            _tp2 := na
+            _tp3 := na
+            _hit_stop := na
+            _hit_tp1 := na
+            _hit_tp2 := na
+            _hit_tp3 := na
+
+if _in_long or _in_short
+    // when tp1 is hit move stop to entry price.
+    if not na(_hit_tp1)
+        _stop := _entry_price
+        _tp1 := na
+    // when tp2 is hit move stop to tp1 price.
+    if not na(_hit_tp2)
+        _stop := valuewhen(na(_tp1), _hit_tp1[1], 0)
+        _tp2 := na
+    // when tp3 is hit and trailing is on use an trailing stop.
+    if _tp3_trailing and not na(_hit_tp3)
+        _stop := _in_long ? _stp_lower : _stp_upper
+        _tp3 := na
+    // if we havn't exit when tp3 was hit update the trailing stop.
+    _in_tp3 = _in_long ? valuewhen(not na(_hit_tp3), time, 0) > _when_long : valuewhen(not na(_hit_tp3), time, 0) > _when_short
+    if _tp3_trailing and _in_tp3
+        _stop := _in_long ? _stp_lower : _stp_upper
+
+strategy.entry("Long", strategy.long, when=_enter_long)
+strategy.entry("Short", strategy.short, when=_enter_short)
+strategy.exit("TP1", "Long", limit=valuewhen(not na(_tp1), _tp1, 0), qty_percent=_tp1_percent, when=_in_long)
+strategy.exit("TP2", "Long", limit=valuewhen(not na(_tp2), _tp2, 0), qty_percent=_tp2_percent, when=_in_long)
+strategy.exit("TP1", "Short", limit=valuewhen(not na(_tp1), _tp1, 0), qty_percent=_tp1_percent, when=_in_short)
+strategy.exit("TP2", "Short", limit=valuewhen(not na(_tp2), _tp2, 0), qty_percent=_tp2_percent, when=_in_short)
+strategy.close_all(when=_exit_trade or not na(_hit_stop) or (not _tp3_trailing and not na(_hit_tp3)))
+
+//{==================================================================================== Strategy Draw ======================================================================================}
+
+plotshape(_enter_long, style=shape.triangleup, location=location.bottom, color=#1ca168)
+plotshape(_enter_short, style=shape.triangleup, location=location.bottom, color=#ce2020)
+plotshape(_exit_trade, style=shape.triangledown, location=location.bottom, color=#ffc100)
+barcolor(_enter_long ? #1ca168 : _enter_short ? #ce2020 : _exit_trade ? #ffc100 : na)
+
+plotchar(_hit_stop, textcolor=#ffff33, location=location.absolute, char='', text="Stop")
+plotchar(_hit_tp1, textcolor=#ffff33, location=location.absolute, char='', text="TP1")
+plotchar(_hit_tp2, textcolor=#ffff33, location=location.absolute, char='', text="TP2")
+plotchar(_hit_tp3, textcolor=#ffff33, location=location.absolute, char='', text="TP3")
+
+plot(_stop, style=plot.style_circles, linewidth=2, color=#ce2020, transp=45, title="Stop")
+plot(_tp1, style=plot.style_circles, linewidth=2, color=#1ca168, transp=45, title="Tp1")
+plot(_tp2, style=plot.style_circles, linewidth=2, color=#1ca168, transp=45, title="Tp2")
+plot(_tp3, style=plot.style_circles, linewidth=2, color=#1ca168, transp=45, title="Tp3")
+
+// Draw an info panel for Stop-Loss, Profit-Taking and Position Sizing
+_panel_x = time + round(change(time) * 20)
+_panel_y = highest(50)
+_panel_color = _in_long ? #1ca168 : _in_short ? #ce2020 : #051c4d
+_text_color = #ffc100
+_price_format = min_tick_format()
+
+// Position Size Formula
+_entry = _in_long or _in_short ? _entry_price : close
+_stop_distance = abs(pct_diff(_entry, _stop) / 100)
+_risk_amount = _capital * _risk
+_position_size = _risk_amount / _stop_distance
+
+info_panel(_panel_x, _panel_y, _panel_color, _text_color, 22, "{=========== {\\/} ===========}")
+info_panel(_panel_x, _panel_y, _panel_color, _text_color, 20, "TP3: " + tostring(_tp3, _price_format))
+info_panel(_panel_x, _panel_y, _panel_color, _text_color, 18, "TP2: " + tostring(_tp2, _price_format))
+info_panel(_panel_x, _panel_y, _panel_color, _text_color, 16, "TP1: " + tostring(_tp1, _price_format))
+info_panel(_panel_x, _panel_y, _panel_color, _text_color, 14, "TP1: " + tostring(_tp1, _price_format))
+info_panel(_panel_x, _panel_y, _panel_color, _text_color, 12, "Stop: " + tostring(_stop, _price_format))
+info_panel(_panel_x, _panel_y, _panel_color, _text_color, 10, "Entry: " + tostring(_entry, _price_format))
+info_panel(_panel_x, _panel_y, _panel_color, _text_color, 8, "Stop Distance: " + tostring(_stop_distance * 100, "#.##%"))
+info_panel(_panel_x, _panel_y, _panel_color, _text_color, 6, "Position Size: " + tostring(_position_size, _price_format))
+info_panel(_panel_x, _panel_y, _panel_color, _text_color, 4, "Risk: " + tostring(_risk, "#.##%"))
+info_panel(_panel_x, _panel_y, _panel_color, _text_color, 2, "Capital: " + tostring(_capital, _price_format))
+info_panel(_panel_x, _panel_y, _panel_color, _text_color, 0, "{=========== {\\/} ===========}")
