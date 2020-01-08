@@ -2,25 +2,18 @@
 // © RobotNeverDie
 
 //@version=4
-strategy("Template Advance Strategy", shorttitle="Template Advance Strategy", overlay=true, pyramiding=100, initial_capital=10000, default_qty_type=strategy.percent_of_equity, default_qty_value=3)
+strategy("Example Advance Strategy", shorttitle="Example Advance Strategy", overlay=true, pyramiding=100, initial_capital=10000, default_qty_type=strategy.percent_of_equity, default_qty_value=3)
 
 // Description:
-// An advance long/short strategy template file.
-// The template file layout an trend following trading system. [1] [2]
-// * Trend Following - An indicator that identify trend's direction, most likely an moving average.
-// * Trend Confirmation - Most trend following indicator are prone to whipsaw, so you what to confirm the movement with something like an momentum indicator.
-// * Entry/Exit - Now that you have an trend directional bias you may want to find an optimal entry/exit strategy this is where overbought/oversold indicator come in handy.
-// * Stop-Loss and Profit-Taking - We need to determine an method to take profit on a winning trade and an loss on an losing trade. [3]
-// * Position Sizing - To control risk and maximize gains we must determine what size of a position we are willing to risk. [4]
+// An example of an advance trend following strategy. [1]
+// * Trend Following - Moving Average.
+// * Trend Confirmation - Waddah Attar Explosion.
+// * Entry/Exit - Fisher Transform.
 //
-// References/Notes:
-// [1] https://www.babypips.com/learn/forex/design-your-trading-system
-// [2] https://www.investopedia.com/articles/forex/10/indicators-fx-traders-must-know.asp
-// [3] I provided an method using bollinger bands with an stop loss and three profit-taking price levels. Each time an tp level is hit you will reduce your position and move the stop-loss to the old price level.
-// [4] I use the formula: Position Size = Risk Amount / Distance to Stop Loss. https://medium.com/@cryptocreddy/comprehensive-guide-to-position-size-and-leverage-2e27764ce9e0
+// Notes:
+// [1] If you wish to see re-entry results increase the Trades Count setting.
 //
 // More at https://github.com/robotneverdie-algo/Pine-Script
-
 //{=================================================================================== Misc. Functions =====================================================================================}
 
 source(x) =>
@@ -94,10 +87,80 @@ position_size(capital, risk, entry, stop) =>
     risk_amount = capital * risk
     risk_amount / stop_distance
 
+// clamp a number in an range
+clamp(x, xmin, xmax) =>
+    max(min(x, xmax), xmin)
+
+// MACD Line
+macd_line(src, fast, slow) =>
+    ema(src, fast) - ema(src, slow)
+
+// Fisher Transform https://www.mesasoftware.com/papers/UsingTheFisherTransform.pdf
+fisher_transform(x, len) =>
+    xmin = lowest(x, len)
+    xmax = highest(x, len)
+    np = 0.0
+    np := clamp(0.33 * 2.0 * ((x - xmin) / (xmax - xmin) - 0.5) + 0.67 * nz(np[1]), -0.999, 0.999)
+    fish = 0.0
+    fish := 0.5 * log((1 + x) / (1 - x)) + 0.5 * nz(fish[1])
+
+//{=============================================================================== Moving Average Functions ================================================================================}
+
+// Hull Moving Average
+hull(x, len) =>
+    wma(2 * wma(x, len / 2) - wma(x, len), round(sqrt(len)))
+
+// Jurik Moving Average https://www.tradingview.com/script/nZuBWW9j-Jurik-Moving-Average/
+jma(x, len, phase, power) =>
+    // Copyright (c) 2007-present Jurik Research and Consulting. All rights reserved.
+    // Copyright (c) 2018-present, Alex Orekhov (everget)
+    ratio = phase < -100 ? 0.5 : phase > 100 ? 2.5 : phase / 100 + 1.5
+    beta = 0.45 * (len - 1) / (0.45 * (len - 1) + 2)
+    alpha = pow(beta, power)
+    j = 0.0
+    e0 = 0.0
+    e1 = 0.0
+    e2 = 0.0
+    e0 := (1 - alpha) * x + alpha * nz(e0[1])
+    e1 := (x - e0) * (1 - beta) + beta * nz(e1[1])
+    e2 := (e0 + ratio * e1 - nz(j[1])) * pow(1 - alpha, 2) + pow(alpha, 2) * nz(e2[1])
+    j := e2 + nz(j[1])
+    j
+
+// SuperSmoother Filter http://www.mesasoftware.com/papers/PredictiveIndicatorsForEffectiveTrading%20Strategies.pdf
+supersmoother(x, len) =>
+    pi = 3.14159
+    y = exp(-sqrt(2) * pi / len)
+
+    c = -y * y
+    b = 2.0 * y * cos(sqrt(2) * pi / len)
+    a = 1 - b - c
+
+    z = 0.0
+    z := iff(bar_index == 0, 0.0, iff(bar_index == 1, b * nz(z[1]), iff(bar_index == 2,  b * nz(z[1]) + c * nz(z[2]), a * ((x + nz(x[1])) / 2) + b * nz(z[1]) + c * nz(z[2]))))
+    z
+
+// Zero Lag Exponential Moving Average http://www.mesasoftware.com/papers/ZeroLag.pdf
+zlema(x, len, limit) =>
+    a = 2 / (len + 1)
+    e = 0.0
+    e := a * x + (1 - a) * nz(e[1])
+    ec = 0.0
+    least_error = 1000000.0
+    best_gain = 0.0
+    for i = -limit to limit
+        gain = i / 10
+        ec := a * (e + gain * (x - ec[1])) + (1 - a) * nz(ec[1])
+        error = x - ec
+        if abs(error) < least_error
+            least_error := abs(error)
+            best_gain := gain
+    ec := a * (e + best_gain * (x - nz(ec[1]))) + (1 - a) * nz(ec[1])
+
 //{============================================================================= Backtest Date Range Setting ===============================================================================}
 
 _backtest_header = input(true, type=input.bool, title="{================== Backtest Date Range Setting =================}")
-_use_date_range = input(true, type=input.bool, title="Use Date Range")
+_use_date_range = input(true, type=input.bool, title=" Use Date Range")
 _start_day = input(1, minval=1, maxval=31, title="Start Date")
 _start_month = input(1, minval=1, maxval=12, title="Start Month")
 _start_year = input(1950, minval=2011, title="Start Year")
@@ -118,7 +181,6 @@ bar_window() =>
 //{=================================================================================== Strategy Setting =====================================================================================}
 
 _strategy_header = input(true, type=input.bool, title="{====================== Strategy Settings =======================}")
-
 _trades_count = input(1, minval=1, title="Trades Count")
 _src = input("ohlc4", options=["open", "high", "low", "close", "hl2", "hlc3", "ohlc4", "vwap"], title="Source")
 _use_tf = input(false, type=input.bool, title="Use Different Timeframe")
@@ -127,20 +189,49 @@ _tf = input("240", type=input.resolution, title="Timeframe")
 //{=============================================================================== Trend Following Setting =================================================================================}
 
 _following_header = input(true, type=input.bool, title="{==================== Trend Following Setting ===================}")
+_ma_type = input("zlema", options=["hull", "jma", "supersmoother", "zlema"], title="Moving Average Type")
+_ma_len = input(60, title="Moving Average Length")
+
+_jma_phase = input(50, title="jma: phase")
+_jma_power = input(2, title="jma: power")
+_zlema_limit = input(50, title="zlema: gain limit")
+
+moving_average(src, type, len) =>
+    if type == "hull"
+        hull(src, len)
+    else
+        if type == "jma"
+            jma(src, len, _jma_phase, _jma_power)
+        else
+            if type == "supersmoother"
+                supersmoother(src, len)
+            else
+                zlema(src, len, _zlema_limit)
 
 //{============================================================================== Trend Confirmation Setting ===============================================================================}
 
 _confirmation_header = input(true, type=input.bool, title="{================== Trend Confirmation Setting ==================}")
+// Waddah Attar Explosion https://www.tradingview.com/script/iu3kKWDI-Waddah-Attar-Explosion-LazyBear/
+_fast_len = input(30, title="MACD Line: Fast Length")
+_slow_len = input(60, title="MACD Line: Slow Length")
+_macd_mult = input(150, title="MACD Line: Multiplier")
+_macd_lookback = input(1, minval=1, title="MACD Line: Lookback")
+_explosion_type = input("bollinger", options=["bollinger", "keltner", "atr"], title="Explosion: Bands Type")
+_explosion_len = input(30, title="Explosion: Length")
+_explosion_mult = input(3, step=0.1, title="Explosion: Multiplier")
 
 //{================================================================================== Entry/Exit Setting ===================================================================================}
 
 _entry_exit_header = input(true, type=input.bool, title="{====================== Entry/Exit Setting ======================}")
+// Fisher Transform https://www.mesasoftware.com/papers/UsingTheFisherTransform.pdf
+_fisher_src = input("hl2", options=["open", "high", "low", "close", "hl2", "hlc3", "ohlc4", "vwap"], title="Fisher: Source")
+_fisher_len = input(10, title="Fisher: Length")
 
 //{========================================================================= Stop-Loss and Profit-Taking Setting ===========================================================================}
 
 _sl_tp_header = input(true, type=input.bool, title="{============== Stop-Loss and Profit-Taking Setting =============}")
 _bands_type = input("bollinger", options=["bollinger", "keltner", "atr"], title="Bands Type")
-_bands_len = input(20, title="Bands Length")
+_bands_len = input(10, title="Bands Length")
 
 _stp_mult = input(1, minval=0.1, step=0.1, title="Stop-Loss Multiplier")
 _tp1_mult = input(1, minval=0.1, step=0.1, title="Take-Profit TP1 Multiplier")
@@ -155,24 +246,51 @@ _tp3_trailing = input(true, type=input.bool, title="TP3: Use Trailing Stop-Loss"
 
 _position_sizing_header = input(true, type=input.bool, title="{==================== Position Sizing Setting ===================}")
 _capital = input(10000, minval=0.00000001, title="Capital")
-_risk = input(10, minval=0.01, maxval=100, step=0.01, title="Risk Percent") / 100
+_risk = input(3, minval=0.01, maxval=100, step=0.01, title="Risk Percent") / 100
 
 //{==================================================================================== Strategy Logic =====================================================================================}
 
 _source = _use_tf ? security(syminfo.tickerid, _tf, source(_src)) : source(_src)
+
 // Note: Unable to call security function with an multi variable function
 [_stp_upper, _stp_lower] = bands(_source, _bands_type, _bands_len, _stp_mult)
 [_tp1_upper, _tp1_lower] = bands(_source, _bands_type, _bands_len, _tp1_mult)
 [_tp2_upper, _tp2_lower] = bands(_source, _bands_type, _bands_len, _tp2_mult)
 [_tp3_upper, _tp3_lower] = bands(_source, _bands_type, _bands_len, _tp3_mult)
 
+// Trend Following - MA
+_ma = moving_average(_source, _ma_type, _ma_len)
+
+// Trend Confirmation - Waddah Attar Explosion
+_diff = (macd_line(_source, _fast_len, _slow_len) - macd_line(_source[_macd_lookback], _fast_len, _slow_len)) * _macd_mult
+_up = _diff > 0 ? _diff : na
+_down = _diff < 0 ? abs(_diff) : na
+[_upper_band, _lower_band] = bands(_source, _explosion_type, _explosion_len, _explosion_mult)
+_explosion = _upper_band - _lower_band
+
+// Entry/Exit - Fisher Transform
+_fisher = fisher_transform(source(_fisher_src), _fisher_len)
+
 //{=================================================================================== Strategy Signal =====================================================================================}
 
-_long = false
-_short = false
+// Trend Following - MA
+_ma_long = _source > _ma
+_ma_short = _source < _ma
 
-_xlong = false
-_xshort = false
+// Trend Confirmation - Waddah Attar Explosion
+_wae_long = rising(_up, 1) and rising(_explosion, 1) and _up > _explosion
+_wae_short = rising(_down, 1) and rising(_explosion, 1) and _down > _explosion
+_wae_xlong = _up < _explosion
+_wae_xshort = _down < _explosion
+
+_fisher_xlong = falling(_fisher, 1)
+_fisher_xshort = rising(_fisher, 1)
+
+_long = _ma_long and _wae_long
+_short = _ma_short and _wae_short
+
+_xlong = _ma_short and _wae_xlong or _fisher_xlong
+_xshort = _ma_long and _wae_xshort or _fisher_xshort
 
 var _long_count = 0
 var _short_count = 0
@@ -288,6 +406,8 @@ strategy.exit("TP2", "Short", limit=valuewhen(not na(_tp2), _tp2, 0), qty_percen
 strategy.close_all(when=_exit_trade or not na(_hit_stop) or (not _tp3_trailing and not na(_hit_tp3)))
 
 //{==================================================================================== Strategy Draw ======================================================================================}
+
+plot(_ma, linewidth=2, color=_ma < _source ? #1ca168 : #ce2020)
 
 plotshape(_enter_long, style=shape.triangleup, location=location.bottom, color=#1ca168)
 plotshape(_enter_short, style=shape.triangleup, location=location.bottom, color=#ce2020)

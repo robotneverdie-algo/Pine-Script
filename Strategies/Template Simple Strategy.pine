@@ -38,13 +38,13 @@ source(x) =>
 //{============================================================================= Backtest Date Range Setting ===============================================================================}
 
 _backtest_header = input(true, type=input.bool, title="{================== Backtest Date Range Setting =================}")
-_use_date_range = input(true, type=input.bool, title="Backtest: Use Date Range")
-_start_day = input(1, minval=1, maxval=31, title="Backtest: Start Date")
-_start_month = input(1, minval=1, maxval=12, title="Backtest: Start Month")
-_start_year = input(1950, minval=2011, title="Backtest: Start Year")
-_end_day = input(1, minval=1, maxval=31, title="Backtest: End Date")
-_end_month = input(1, minval=1, maxval=12, title="Backtest: End Month")
-_end_year = input(2050, minval=2019, title="Backtest: End Year")
+_use_date_range = input(true, type=input.bool, title="Use Date Range")
+_start_day = input(1, minval=1, maxval=31, title="Start Date")
+_start_month = input(1, minval=1, maxval=12, title="Start Month")
+_start_year = input(1950, minval=2011, title="Start Year")
+_end_day = input(1, minval=1, maxval=31, title="End Date")
+_end_month = input(1, minval=1, maxval=12, title="End Month")
+_end_year = input(2050, minval=2019, title="End Year")
 
 _start = timestamp(_start_year, _start_month, _start_day, 0, 0)
 _end = timestamp(_end_year, _end_month, _end_day, 0, 0)
@@ -59,10 +59,10 @@ bar_window() =>
 //{=================================================================================== Strategy Setting =====================================================================================}
 
 _strategy_header = input(true, type=input.bool, title="{====================== Strategy Settings =======================}")
-_trades_count = input(1, minval=1, title="Strategy: Trades Count")
-_src = input("ohlc4", options=["open", "high", "low", "close", "hl2", "hlc3", "ohlc4", "vwap"], title="Strategy: Source")
-_use_tf = input(false, type=input.bool, title="Strategy: Use Different Timeframe")
-_tf = input("240", type=input.resolution, title="Strategy: Timeframe")
+_trades_count = input(1, minval=1, title="Trades Count")
+_src = input("ohlc4", options=["open", "high", "low", "close", "hl2", "hlc3", "ohlc4", "vwap"], title="Source")
+_use_tf = input(false, type=input.bool, title="Use Different Timeframe")
+_tf = input("240", type=input.resolution, title="Timeframe")
 
 //{==================================================================================== Strategy Logic =====================================================================================}
 
