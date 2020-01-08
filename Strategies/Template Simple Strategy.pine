@@ -35,10 +35,30 @@ source(x) =>
                             else
                                 vwap
 
+//{============================================================================= Backtest Date Range Setting ===============================================================================}
+
+_backtest_header = input(true, type=input.bool, title="{================== Backtest Date Range Setting =================}")
+_use_date_range = input(true, type=input.bool, title="Backtest: Use Date Range")
+_start_day = input(1, minval=1, maxval=31, title="Backtest: Start Date")
+_start_month = input(1, minval=1, maxval=12, title="Backtest: Start Month")
+_start_year = input(1950, minval=2011, title="Backtest: Start Year")
+_end_day = input(1, minval=1, maxval=31, title="Backtest: End Date")
+_end_month = input(1, minval=1, maxval=12, title="Backtest: End Month")
+_end_year = input(2050, minval=2019, title="Backtest: End Year")
+
+_start = timestamp(_start_year, _start_month, _start_day, 0, 0)
+_end = timestamp(_end_year, _end_month, _end_day, 0, 0)
+
+// Bar window Function
+bar_window() =>
+    if _use_date_range
+        time >= _start and time <= _end
+    else
+        true
+
 //{=================================================================================== Strategy Setting =====================================================================================}
 
 _strategy_header = input(true, type=input.bool, title="{====================== Strategy Settings =======================}")
-
 _trades_count = input(1, minval=1, title="Strategy: Trades Count")
 _src = input("ohlc4", options=["open", "high", "low", "close", "hl2", "hlc3", "ohlc4", "vwap"], title="Strategy: Source")
 _use_tf = input(false, type=input.bool, title="Strategy: Use Different Timeframe")
@@ -90,8 +110,8 @@ if _short
 if (_xlong and _in_long) or (_xshort and _in_short)
     _when_exit := time
 
-_enter_long = _when_long == time
-_enter_short = _when_short == time
+_enter_long = _when_long == time and bar_window()
+_enter_short = _when_short == time and bar_window()
 _exit_trade = _when_exit == time
 
 strategy.entry("Long", strategy.long, when=_enter_long)
