@@ -88,6 +88,12 @@ bands(x, type, len, mult) =>
 pct_diff(x, y) =>
     ((x - y) / avg(x, y)) * 100
 
+// Position Size Formula
+position_size(capital, risk, entry, stop) =>
+    stop_distance = abs(pct_diff(entry, stop) / 100)
+    risk_amount = capital * risk
+    risk_amount / stop_distance
+
 //{============================================================================= Backtest Date Range Setting ===============================================================================}
 
 _backtest_header = input(true, type=input.bool, title="{================== Backtest Date Range Setting =================}")
@@ -207,6 +213,7 @@ _enter_short = _when_short == time and bar_window()
 _exit_trade = _when_exit == time
 
 var _entry_price = 0.0
+var _position_size = 0.0
 var float _stop = na
 var float _tp1 = na
 var float _tp2 = na
@@ -221,6 +228,7 @@ if _enter_long or _in_long
     if _enter_long
         _entry_price := close
         _stop := _stp_lower
+        _position_size := position_size(_capital, _risk, _entry_price, _stop)
         _tp1 := _tp1_upper
         _tp2 := _tp2_upper
         _tp3 := _tp3_upper
@@ -233,6 +241,7 @@ else
         if _enter_short
             _entry_price := close
             _stop := _stp_upper
+            _position_size := position_size(_capital, _risk, _entry_price, _stop)
             _tp1 := _tp1_lower
             _tp2 := _tp2_lower
             _tp3 := _tp3_lower
@@ -270,8 +279,8 @@ if _in_long or _in_short
     if _tp3_trailing and _in_tp3
         _stop := _in_long ? _stp_lower : _stp_upper
 
-strategy.entry("Long", strategy.long, when=_enter_long)
-strategy.entry("Short", strategy.short, when=_enter_short)
+strategy.entry("Long", strategy.long, qty=_position_size, when=_enter_long)
+strategy.entry("Short", strategy.short, qty=_position_size, when=_enter_short)
 strategy.exit("TP1", "Long", limit=valuewhen(not na(_tp1), _tp1, 0), qty_percent=_tp1_percent, when=_in_long)
 strategy.exit("TP2", "Long", limit=valuewhen(not na(_tp2), _tp2, 0), qty_percent=_tp2_percent, when=_in_long)
 strategy.exit("TP1", "Short", limit=valuewhen(not na(_tp1), _tp1, 0), qty_percent=_tp1_percent, when=_in_short)
@@ -302,20 +311,14 @@ _panel_color = _in_long ? #1ca168 : _in_short ? #ce2020 : #051c4d
 _text_color = #ffc100
 _price_format = min_tick_format()
 
-// Position Size Formula
-_entry = _in_long or _in_short ? _entry_price : close
-_stop_distance = abs(pct_diff(_entry, _stop) / 100)
-_risk_amount = _capital * _risk
-_position_size = _risk_amount / _stop_distance
-
 info_panel(_panel_x, _panel_y, _panel_color, _text_color, 22, "{=========== {\\/} ===========}")
 info_panel(_panel_x, _panel_y, _panel_color, _text_color, 20, "TP3: " + tostring(_tp3, _price_format))
 info_panel(_panel_x, _panel_y, _panel_color, _text_color, 18, "TP2: " + tostring(_tp2, _price_format))
 info_panel(_panel_x, _panel_y, _panel_color, _text_color, 16, "TP1: " + tostring(_tp1, _price_format))
 info_panel(_panel_x, _panel_y, _panel_color, _text_color, 14, "TP1: " + tostring(_tp1, _price_format))
 info_panel(_panel_x, _panel_y, _panel_color, _text_color, 12, "Stop: " + tostring(_stop, _price_format))
-info_panel(_panel_x, _panel_y, _panel_color, _text_color, 10, "Entry: " + tostring(_entry, _price_format))
-info_panel(_panel_x, _panel_y, _panel_color, _text_color, 8, "Stop Distance: " + tostring(_stop_distance * 100, "#.##%"))
+info_panel(_panel_x, _panel_y, _panel_color, _text_color, 10, "Entry: " + tostring(_entry_price, _price_format))
+info_panel(_panel_x, _panel_y, _panel_color, _text_color, 8, "Stop Distance: " + tostring(abs(pct_diff(_entry_price, _stop)), "#.##%"))
 info_panel(_panel_x, _panel_y, _panel_color, _text_color, 6, "Position Size: " + tostring(_position_size, _price_format))
 info_panel(_panel_x, _panel_y, _panel_color, _text_color, 4, "Risk: " + tostring(_risk, "#.##%"))
 info_panel(_panel_x, _panel_y, _panel_color, _text_color, 2, "Capital: " + tostring(_capital, _price_format))
