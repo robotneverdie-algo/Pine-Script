@@ -90,7 +90,7 @@ pct_diff(x, y) =>
 
 // Position Size Formula
 position_size(capital, risk, entry, stop) =>
-    stop_distance = abs(pct_diff(entry, stop) / 100)
+    stop_distance = abs(pct_diff(entry, stop))
     risk_amount = capital * risk
     risk_amount / stop_distance
 
@@ -279,8 +279,8 @@ if _in_long or _in_short
     if _tp3_trailing and _in_tp3
         _stop := _in_long ? _stp_lower : _stp_upper
 
-strategy.entry("Long", strategy.long, qty=_position_size, when=_enter_long)
-strategy.entry("Short", strategy.short, qty=_position_size, when=_enter_short)
+strategy.entry("Long", strategy.long, when=_enter_long)
+strategy.entry("Short", strategy.short, when=_enter_short)
 strategy.exit("TP1", "Long", limit=valuewhen(not na(_tp1), _tp1, 0), qty_percent=_tp1_percent, when=_in_long)
 strategy.exit("TP2", "Long", limit=valuewhen(not na(_tp2), _tp2, 0), qty_percent=_tp2_percent, when=_in_long)
 strategy.exit("TP1", "Short", limit=valuewhen(not na(_tp1), _tp1, 0), qty_percent=_tp1_percent, when=_in_short)
@@ -318,7 +318,7 @@ info_panel(_panel_x, _panel_y, _panel_color, _text_color, 16, "TP1: " + tostring
 info_panel(_panel_x, _panel_y, _panel_color, _text_color, 14, "TP1: " + tostring(_tp1, _price_format))
 info_panel(_panel_x, _panel_y, _panel_color, _text_color, 12, "Stop: " + tostring(_stop, _price_format))
 info_panel(_panel_x, _panel_y, _panel_color, _text_color, 10, "Entry: " + tostring(_entry_price, _price_format))
-info_panel(_panel_x, _panel_y, _panel_color, _text_color, 8, "Stop Distance: " + tostring(abs(pct_diff(_entry_price, _stop)), "#.##%"))
+info_panel(_panel_x, _panel_y, _panel_color, _text_color, 8, "Stop Distance: " + tostring(abs(pct_diff(_entry_price, _stop)) / 100, "#.##%"))
 info_panel(_panel_x, _panel_y, _panel_color, _text_color, 6, "Position Size: " + tostring(_position_size, _price_format))
 info_panel(_panel_x, _panel_y, _panel_color, _text_color, 4, "Risk: " + tostring(_risk, "#.##%"))
 info_panel(_panel_x, _panel_y, _panel_color, _text_color, 2, "Capital: " + tostring(_capital, _price_format))
