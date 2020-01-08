@@ -48,6 +48,10 @@ dema(x, len) =>
 donchian(len) =>
     avg(lowest(len), highest(len))
 
+// clamp a number in an range
+clamp(x, xmin, xmax) =>
+    max(min(x, xmax), xmin)
+
 // Fractal Adaptive Moving Average http://www.mesasoftware.com/papers/FRAMA.pdf
 frama(x, len) =>
     half = int(len / 2)
