@@ -151,8 +151,6 @@ _position_sizing_header = input(true, type=input.bool, title="{=================
 _capital = input(10000, minval=0.00000001, title="Sizing: Capital")
 _risk = input(10, minval=0.01, maxval=100, step=0.01, title="Sizing: Risk Percent") / 100
 
-
-
 //{==================================================================================== Strategy Logic =====================================================================================}
 
 _source = _use_tf ? security(syminfo.tickerid, _tf, source(_src)) : source(_src)
