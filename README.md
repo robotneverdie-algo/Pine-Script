@@ -62,6 +62,13 @@ A library of trading indicators, strategies and code snippets for Pine Script pr
 > * zlema - Zero Lag Exponential Moving Average http://www.mesasoftware.com/papers/ZeroLag.pdf
 
 ---
+## Copying
+You may copy and/or modified this project source code on the condition that you released under the same license and keep copyright notice when distributing this project source code.
+TradingView template default header are license under Mozilla Public License 2.0
+> // This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/  
+> // © YOUR NAME
+
+---
 ## Contributing
 See [CONTRIBUTING.md](CONTRIBUTING.md) file.
 
