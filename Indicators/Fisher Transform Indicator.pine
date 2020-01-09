@@ -2,7 +2,7 @@
 // © RobotNeverDie
 
 //@version=4
-strategy("Fisher Transform Indicator", shorttitle="Fisher Transform Indicator", overlay=false)
+study("Fisher Transform Indicator", shorttitle="Fisher Transform Indicator", overlay=false)
 
 // Description:
 // Fisher Transform with an changeable EMA alpha https://www.mesasoftware.com/papers/UsingTheFisherTransform.pdf

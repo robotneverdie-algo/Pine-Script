@@ -2,7 +2,7 @@
 // © RobotNeverDie
 
 //@version=4
-strategy("Moving Average Indicator", shorttitle="Moving Average Indicator", overlay=true)
+study("Moving Average Indicator", shorttitle="Moving Average Indicator", overlay=true)
 
 // Description:
 // Moving average cross strategies with three type:

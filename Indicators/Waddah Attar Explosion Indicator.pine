@@ -2,7 +2,7 @@
 // © RobotNeverDie
 
 //@version=4
-strategy("Waddah Attar Explosion Indicator", shorttitle="Waddah Attar Explosion Indicator", overlay=false)
+study("Waddah Attar Explosion Indicator", shorttitle="Waddah Attar Explosion Indicator", overlay=false)
 
 // Description:
 // Waddah Attar Explosion with custom moving averages and exit strategies
