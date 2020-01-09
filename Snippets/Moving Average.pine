@@ -27,7 +27,7 @@
 // * zlema - Zero Lag Exponential Moving Average http://www.mesasoftware.com/papers/ZeroLag.pdf
 //
 // References/Notes:
-// [1] TradingView will slow down when loading/saving so much functions, so be selected of MA function you to wish to have.
+// [1] TradingView will slow down when their is a long chain of if/else statement, so have to split MA function.
 //
 // More at https://github.com/robotneverdie-algo/Pine-Script
 
@@ -240,6 +240,39 @@ _vama_lookback = input(50, title="vama: fast")
 _vidya_len = input(30, title="vidya: ema length")
 _zlema_limit = input(50, title="zlema: gain limit")
 
+moving_average1(src, type, len) =>
+    if type == "modframa"
+        modframa(src, len, _modframa_fast, _modframa_slow)
+    else
+        if type == "rma"
+            rma(src, len)
+        else
+            if type == "sma"
+                sma(src, len)
+            else
+                if type == "smma"
+                    smma(src, len)
+                else
+                    if type == "supersmoother"
+                        supersmoother(src, len)
+                    else
+                        if type == "tema"
+                            tema(src, len)
+                        else
+                            if type == "vama"
+                                vama(src, len, _vama_lookback)
+                            else
+                                if type == "vidya"
+                                    vidya(src, len, _vidya_len)
+                                else
+                                    if type == "vwma"
+                                        vwma(src, len)
+                                    else
+                                        if type == "wma"
+                                            wma(src, len)
+                                        else
+                                            zlema(src, len, _zlema_limit)
+
 moving_average(src, type, len) =>
     if type == "alma"
         alma(src, len, _alma_offset, _alma_sigma)
@@ -274,35 +307,6 @@ moving_average(src, type, len) =>
                                             if type == "mcginley"
                                                 mcginley(src, len, _mcginley_factor)
                                             else
-                                                if type == "modframa"
-                                                    modframa(src, len, _modframa_fast, _modframa_slow)
-                                                else
-                                                    if type == "rma"
-                                                        rma(src, len)
-                                                    else
-                                                        if type == "sma"
-                                                            sma(src, len)
-                                                        else
-                                                            if type == "smma"
-                                                                smma(src, len)
-                                                            else
-                                                                if type == "supersmoother"
-                                                                    supersmoother(src, len)
-                                                                else
-                                                                    if type == "tema"
-                                                                        tema(src, len)
-                                                                    else
-                                                                        if type == "vama"
-                                                                            vama(src, len, _vama_lookback)
-                                                                        else
-                                                                            if type == "vidya"
-                                                                                vidya(src, len, _vidya_len)
-                                                                            else
-                                                                                if type == "vwma"
-                                                                                    vwma(src, len)
-                                                                                else
-                                                                                    if type == "wma"
-                                                                                        wma(src, len)
-                                                                                    else
-                                                                                        zlema(src, len, _zlema_limit)
+                                                moving_average1(src, type, len)
+
 _ma = moving_average(src, _ma_type, _ma_len)

@@ -29,4 +29,4 @@ A collection of code snippets for Pine Script programming language.
 > * zlema - Zero Lag Exponential Moving Average http://www.mesasoftware.com/papers/ZeroLag.pdf  
 >
 > References/Notes:
-> [1] TradingView will slow down when loading/saving so much functions, so be selected of MA function you to wish to have.
+> [1] TradingView will slow down when their is a long chain of if/else statement, so have to split MA function.

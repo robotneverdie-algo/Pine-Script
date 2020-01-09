@@ -37,7 +37,7 @@ A library of trading indicators, strategies and code snippets for Pine Script pr
 ---
 ## Snippets
 * [Moving Average](/Snippets/Moving%20Average.pine)
-> An collection of moving average used in code base
+> An collection of moving averages used in the code base. [1]
 > * alma - Arnaud Legoux Moving Average
 > * cvwma - Coefficient of Variation Weighted Moving Average https://www.tradingview.com/script/0dBtJvhu-Stratus-DW/
 > * dema - Double Exponential Moving Average
@@ -59,7 +59,10 @@ A library of trading indicators, strategies and code snippets for Pine Script pr
 > * vidya - Variable Index Dynamic Average https://www.tradingview.com/script/hdrf0fXV-Variable-Index-Dynamic-Average-VIDYA/
 > * vwma - Volume-Weighted Moving Average
 > * wma - Weighted Moving Average
-> * zlema - Zero Lag Exponential Moving Average http://www.mesasoftware.com/papers/ZeroLag.pdf
+> * zlema - Zero Lag Exponential Moving Average http://www.mesasoftware.com/papers/ZeroLag.pdf  
+>
+> References/Notes:
+> [1] TradingView will slow down when their is a long chain of if/else statement, so have to split MA function.
 
 ---
 ## Copying
