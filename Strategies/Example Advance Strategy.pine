@@ -338,7 +338,7 @@ _tf = input("240", type=input.resolution, title="Timeframe")
 //{=============================================================================== Trend Following Setting =================================================================================}
 
 _following_header = input(true, type=input.bool, title="{==================== Trend Following Setting ===================}")
-_ma_type = input("zlema", options=["hull", "jma", "supersmoother", "zlema"], title="Moving Average Type")
+_ma_type = input("zlema", options=["alma", "cvwma", "dema", "donchian", "ema", "frama", "hull", "jma", "kama", "lsma", "mcginley", "modframa", "rma", "sma", "smma", "supersmoother", "tema", "vama", "vidya", "vwma", "wma", "zlema"], title="Moving Average Type")
 _ma_len = input(60, title="Moving Average Length")
 
 _alma_offset = input(0.8, step=0.01, minval=0.0, maxval=1.0, title="alma: offset")
