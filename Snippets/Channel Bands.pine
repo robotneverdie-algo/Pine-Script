@@ -1,0 +1,48 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © RobotNeverDie
+
+// Description:
+// An collection of channel bands used in the code base. [1]
+//
+// More at https://github.com/robotneverdie-algo/Pine-Script
+
+//{==================================================================================== Channel Bands ======================================================================================}
+
+bands(x, type, len, mult) =>
+    if type == "bollinger"
+        // Bollinger Bands
+        basis = sma(x, len)
+        volatility = stdev(x, len)
+        [basis + (volatility * mult), basis - (volatility * mult)]
+    else
+        if type == "keltner"
+            // Keltner Channels
+            basis = ema(x, len)
+            volatility = atr(len)
+            [basis + (volatility * mult), basis - (volatility * mult)]
+        else
+            if type == "atr"
+                // Average True Range
+                basis = x
+                volatility = atr(len)
+                [basis + (volatility * mult), basis - (volatility * mult)]
+            else
+                if type == "donchian"
+                    // Donchian Channel
+                    upper = highest(len)
+                    lower = lowest(len)
+                    basis = avg(upper, lower)
+                    volatility = upper - lower
+                    [basis + (volatility * mult), basis - (volatility * mult)]
+                else
+                    // Chandelier Exit
+                    upper = highest(len)
+                    lower = lowest(len)
+                    volatility = atr(len)
+                    [lower + (volatility * mult), upper - (volatility * mult)]
+
+_bands_type = input("bollinger", options=["bollinger", "keltner", "atr", "donchian", "chandelier"], title="Channel Bands Type")
+_bands_len = input(30, title="Length")
+_bands_multi = input(3, step=0.1, title="Multiplier")
+
+[_upper_band, _lower_band] = bands(src, _bands_type, _bands_len, _bands_multi)
