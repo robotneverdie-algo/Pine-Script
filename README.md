@@ -51,6 +51,9 @@ A library of trading indicators, strategies and code snippets for Pine Script pr
 * [Waddah Attar Explosion Indicator](/Indicators/Waddah%20Attar%20Explosion%20Strategy.pine)
 > Waddah Attar Explosion with custom moving averages and exit strategies
 
+* [Risk Bands Indicator](/Indicators/Risk%20Bands%20Indicator.pine)
+> An standalone indicator version of the stop-loss and profit-taking from Template Advance Strategy.
+
 ---
 ## Snippets
 * [Moving Average](/Snippets/Moving%20Average.pine)
