@@ -1,0 +1,152 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © RobotNeverDie
+
+//@version=4
+strategy("Fisher Transform Strategy", shorttitle="Fisher Transform Strategy", overlay=false, pyramiding=100, initial_capital=10000, default_qty_type=strategy.percent_of_equity, default_qty_value=3)
+
+// Description:
+// Fisher Transform with an changeable EMA alpha https://www.mesasoftware.com/papers/UsingTheFisherTransform.pdf
+//
+// More at https://github.com/robotneverdie-algo/Pine-Script
+
+//{=================================================================================== Misc. Functions =====================================================================================}
+
+source(x) =>
+    if x == "open"
+        open
+    else
+        if x == "high"
+            high
+        else
+            if x == "low"
+                low
+            else
+                if x == "close"
+                    close
+                else
+                    if x == "hl2"
+                        hl2
+                    else
+                        if x == "hlc3"
+                            hlc3
+                        else
+                            if x == "ohlc4"
+                                ohlc4
+                            else
+                                vwap
+
+// clamp a number in an range
+clamp(x, xmin, xmax) =>
+    max(min(x, xmax), xmin)
+
+// Fisher Transform
+fisher_transform(x, len, ema_len) =>
+    xmin = lowest(x, len)
+    xmax = highest(x, len)
+    alpha = 2 / (ema_len + 1)
+    np = 0.0
+    np := clamp(alpha * 2.0 * ((x - xmin) / (xmax - xmin) - 0.5) + 0.67 * nz(np[1]), -0.999, 0.999)
+    fish = 0.0
+    fish := 0.5 * log((1 + np) / (1 - np)) + 0.5 * nz(fish[1])
+    fish
+
+//{============================================================================= Backtest Date Range Setting ===============================================================================}
+
+_backtest_header = input(true, type=input.bool, title="{================== Backtest Date Range Setting =================}")
+_use_date_range = input(true, type=input.bool, title="Use Date Range")
+_start_day = input(1, minval=1, maxval=31, title="Start Date")
+_start_month = input(1, minval=1, maxval=12, title="Start Month")
+_start_year = input(1950, minval=2011, title="Start Year")
+_end_day = input(1, minval=1, maxval=31, title="End Date")
+_end_month = input(1, minval=1, maxval=12, title="End Month")
+_end_year = input(2050, minval=2019, title="End Year")
+
+_start = timestamp(_start_year, _start_month, _start_day, 0, 0)
+_end = timestamp(_end_year, _end_month, _end_day, 0, 0)
+
+// Bar window Function
+bar_window() =>
+    if _use_date_range
+        time >= _start and time <= _end
+    else
+        true
+
+//{=================================================================================== Strategy Setting =====================================================================================}
+
+_strategy_header = input(true, type=input.bool, title="{====================== Strategy Settings =======================}")
+_trades_count = input(1, minval=1, title="Trades Count")
+
+//{============================================================================== Fisher Transform Setting =================================================================================}
+
+_fisher_src = input("hl2", options=["open", "high", "low", "close", "hl2", "hlc3", "ohlc4", "vwap"], title="Fisher: Source")
+_fisher_len = input(10, title="Fisher: Length")
+_fisher_ema_len = input(10, title="Fisher: EMA Length")
+
+
+//{==================================================================================== Strategy Logic =====================================================================================}
+
+_fisher = fisher_transform(source(_fisher_src), _fisher_len, _fisher_ema_len)
+
+//{=================================================================================== Strategy Signal =====================================================================================}
+
+_overbought = _fisher > 0
+_oversold = _fisher < 0
+
+_long = crossover(_fisher, _fisher[1]) and _oversold
+_short = crossunder(_fisher, _fisher[1]) and _overbought
+
+_xlong = false
+_xshort = false
+
+var _long_count = 0
+var _short_count = 0
+
+var _when_long = 0
+var _when_short = 0
+var _when_exit = 0
+
+_in_long = _when_long > _when_short and _when_long > _when_exit
+_in_short = _when_short > _when_long and _when_short > _when_exit
+_in_exit = _when_exit > _when_long and _when_exit > _when_short
+
+if _long
+    if _in_short or _in_exit
+        _long_count := 1
+    else
+        _long_count := nz(_long_count[1]) + 1
+    _short_count := 0
+    _in_short := false
+    if _long_count <= _trades_count
+        _when_long := time
+
+if _short
+    if _in_long or _in_exit
+        _short_count := 1
+    else
+        _short_count := nz(_short_count[1]) + 1
+    _long_count := 0
+    _in_long := false
+    if _short_count <= _trades_count
+        _when_short := time
+
+if (_xlong and _in_long) or (_xshort and _in_short)
+    _when_exit := time
+
+_enter_long = _when_long == time and bar_window()
+_enter_short = _when_short == time and bar_window()
+_exit_trade = _when_exit == time
+
+strategy.entry("Long", strategy.long, when=_enter_long)
+strategy.entry("Short", strategy.short, when=_enter_short)
+strategy.close_all(when=_exit_trade)
+
+//{==================================================================================== Strategy Draw ======================================================================================}
+
+plot(_fisher, linewidth=2, color=#1d6aed, transp=0, title="Fisher Transform Line")
+plot(_fisher[1], linewidth=2, color=#a01ded, transp=0, title="Trigger Line")
+hline(0, linestyle=hline.style_dashed, linewidth=1, color=#bdbdbd, title="Zero Line")
+
+plotshape(_enter_long, style=shape.triangleup, location=location.bottom, color=#1ca168)
+plotshape(_enter_short, style=shape.triangleup, location=location.bottom, color=#ce2020)
+plotshape(_exit_trade, style=shape.triangledown, location=location.bottom, color=#ffc100)
+barcolor(_enter_long ? #1ca168 : _enter_short ? #ce2020 : _exit_trade ? #ffc100 : na)

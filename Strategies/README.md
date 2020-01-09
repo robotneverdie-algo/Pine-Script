@@ -38,3 +38,6 @@ A collection of trading strategies.
 
 * [Waddah Attar Explosion Strategy](/Strategies/Waddah%20Attar%20Explosion%20Strategy.pine)
 > Waddah Attar Explosion with custom moving averages and exit strategies
+
+* [Fisher Transform Strategy](/Strategies/Fisher%20Transform%20Strategy.pine)
+> Fisher Transform with an changeable EMA alpha https://www.mesasoftware.com/papers/UsingTheFisherTransform.pdf
