@@ -334,6 +334,7 @@ _trades_count = input(1, minval=1, title="Trades Count")
 _src = input("ohlc4", options=["open", "high", "low", "close", "hl2", "hlc3", "ohlc4", "vwap"], title="Source")
 _use_tf = input(false, type=input.bool, title="Use Different Timeframe")
 _tf = input("240", type=input.resolution, title="Timeframe")
+_market_position = input("Both", options=["Both", "Long", "Short"], title="Strategy Market Position")
 
 //{=============================================================================== Trend Following Setting =================================================================================}
 
@@ -542,8 +543,8 @@ if _short
 if (_xlong and _in_long) or (_xshort and _in_short)
     _when_exit := time
 
-_enter_long = _when_long == time and bar_window()
-_enter_short = _when_short == time and bar_window()
+_enter_long = _when_long == time and bar_window() and (_market_position == "Long" or _market_position == "Both")
+_enter_short = _when_short == time and bar_window() and (_market_position == "Short" or _market_position == "Both")
 _exit_trade = _when_exit == time
 
 var _entry_price = 0.0

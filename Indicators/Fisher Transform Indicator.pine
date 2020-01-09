@@ -75,6 +75,7 @@ bar_window() =>
 
 _strategy_header = input(true, type=input.bool, title="{====================== Strategy Settings =======================}")
 _trades_count = input(1, minval=1, title="Trades Count")
+_market_position = input("Both", options=["Both", "Long", "Short"], title="Strategy Market Position")
 
 //{============================================================================== Fisher Transform Setting =================================================================================}
 
@@ -132,8 +133,8 @@ if _short
 if (_xlong and _in_long) or (_xshort and _in_short)
     _when_exit := time
 
-_enter_long = _when_long == time and bar_window()
-_enter_short = _when_short == time and bar_window()
+_enter_long = _when_long == time and bar_window() and (_market_position == "Long" or _market_position == "Both")
+_enter_short = _when_short == time and bar_window() and (_market_position == "Short" or _market_position == "Both")
 _exit_trade = _when_exit == time
 
 //{==================================================================================== Strategy Draw ======================================================================================}
