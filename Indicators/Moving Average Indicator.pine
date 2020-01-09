@@ -5,7 +5,7 @@
 strategy("Moving Average Indicator", shorttitle="Moving Average Indicator", overlay=true)
 
 // Description:
-// Moving average crosses three types:
+// Moving average cross strategies with three type:
 // Price Cross - When price cross the slow ma
 // Two Cross - When fast ma cross the slow ma
 // Tri Cross - When fast ma cross mid, slow ma

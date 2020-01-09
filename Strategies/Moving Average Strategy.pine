@@ -5,7 +5,7 @@
 strategy("Moving Average Strategy", shorttitle="Moving Average Strategy", overlay=true, pyramiding=100, initial_capital=10000, default_qty_type=strategy.percent_of_equity, default_qty_value=3)
 
 // Description:
-// Moving average crosses three types:
+// Moving average cross strategies with three type:
 // Price Cross - When price cross the slow ma
 // Two Cross - When fast ma cross the slow ma
 // Tri Cross - When fast ma cross mid, slow ma

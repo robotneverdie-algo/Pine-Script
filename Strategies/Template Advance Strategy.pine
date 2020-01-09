@@ -79,10 +79,25 @@ bands(x, type, len, mult) =>
             volatility = atr(len)
             [basis + (volatility * mult), basis - (volatility * mult)]
         else
-            // Average True Range
-            basis = x
-            volatility = atr(len)
-            [basis + (volatility * mult), basis - (volatility * mult)]
+            if type == "atr"
+                // Average True Range
+                basis = x
+                volatility = atr(len)
+                [basis + (volatility * mult), basis - (volatility * mult)]
+            else
+                if type == "donchian"
+                    // Donchian Channel
+                    upper = highest(len)
+                    lower = lowest(len)
+                    basis = avg(upper, lower)
+                    volatility = upper - lower
+                    [basis + (volatility * mult), basis - (volatility * mult)]
+                else
+                    // Chandelier Exit
+                    upper = highest(len)
+                    lower = lowest(len)
+                    volatility = atr(len)
+                    [lower + (volatility * mult), upper - (volatility * mult)]
 
 // percentage difference
 pct_diff(x, y) =>
@@ -139,7 +154,7 @@ _entry_exit_header = input(true, type=input.bool, title="{======================
 //{========================================================================= Stop-Loss and Profit-Taking Setting ===========================================================================}
 
 _sl_tp_header = input(true, type=input.bool, title="{============== Stop-Loss and Profit-Taking Setting =============}")
-_bands_type = input("bollinger", options=["bollinger", "keltner", "atr"], title="Bands Type")
+_bands_type = input("bollinger", options=["bollinger", "keltner", "atr", "donchian", "chandelier"], title="Bands Type")
 _bands_len = input(20, title="Bands Length")
 
 _stp_mult = input(1, minval=0.1, step=0.1, title="Stop-Loss Multiplier")

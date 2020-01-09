@@ -30,3 +30,11 @@ A collection of code snippets for Pine Script programming language.
 >
 > References/Notes:
 > [1] TradingView will slow down when their is a long chain of if/else statement, so have to split MA function.
+
+* [Channel Bands](/Snippets/Channel%20Bands.pine)
+> An collection of channel bands used in the code base. [1]
+> * bollinger - Bollinger Bands
+> * keltner - Keltner Channels
+> * atr - Average True Range
+> * donchian - Bollinger Bands
+> * chandelier - Chandelier Exit

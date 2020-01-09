@@ -31,8 +31,25 @@ A library of trading indicators, strategies and code snippets for Pine Script pr
 > Notes:
 > [1] If you wish to see re-entry results increase the Trades Count setting.
 
+* [Moving Average Strategy](/Strategies/Moving%20Average%20Strategy.pine)
+> Moving average cross strategies with three type:
+> Price Cross - When price cross the slow ma
+> Two Cross - When fast ma cross the slow ma
+> Tri Cross - When fast ma cross mid, slow ma
+
+* [Waddah Attar Explosion Strategy](/Strategies/Waddah%20Attar%20Explosion%20Strategy.pine)
+> Waddah Attar Explosion with custom moving averages and exit strategies
+
 ---
 ## Indicators
+* [Moving Average Indicator](/Indicators/Moving%20Average%20Strategy.pine)
+> Moving average cross strategies with three type:
+> Price Cross - When price cross the slow ma
+> Two Cross - When fast ma cross the slow ma
+> Tri Cross - When fast ma cross mid, slow ma
+
+* [Waddah Attar Explosion Indicator](/Indicators/Waddah%20Attar%20Explosion%20Strategy.pine)
+> Waddah Attar Explosion with custom moving averages and exit strategies
 
 ---
 ## Snippets
@@ -63,6 +80,14 @@ A library of trading indicators, strategies and code snippets for Pine Script pr
 >
 > References/Notes:
 > [1] TradingView will slow down when their is a long chain of if/else statement, so have to split MA function.
+
+* [Channel Bands](/Snippets/Channel%20Bands.pine)
+> An collection of channel bands used in the code base. [1]
+> * bollinger - Bollinger Bands
+> * keltner - Keltner Channels
+> * atr - Average True Range
+> * donchian - Bollinger Bands
+> * chandelier - Chandelier Exit
 
 ---
 ## Copying

@@ -3,6 +3,11 @@
 
 // Description:
 // An collection of channel bands used in the code base. [1]
+// * bollinger - Bollinger Bands
+// * keltner - Keltner Channels
+// * atr - Average True Range
+// * donchian - Bollinger Bands
+// * chandelier - Chandelier Exit
 //
 // More at https://github.com/robotneverdie-algo/Pine-Script
 
