@@ -97,7 +97,7 @@ bands(x, type, len, mult) =>
                     upper = highest(len)
                     lower = lowest(len)
                     volatility = atr(len)
-                    [lower + (volatility * mult), upper - (volatility * mult)]
+                    [upper - (volatility * mult) , lower + (volatility * mult)]
 
 // percentage difference
 pct_diff(x, y) =>

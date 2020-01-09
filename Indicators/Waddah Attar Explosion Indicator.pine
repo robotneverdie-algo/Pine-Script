@@ -67,7 +67,7 @@ bands(x, type, len, mult) =>
                     upper = highest(len)
                     lower = lowest(len)
                     volatility = atr(len)
-                    [lower + (volatility * mult), upper - (volatility * mult)]
+                    [upper - (volatility * mult) , lower + (volatility * mult)]
 
 //{=============================================================================== Moving Average Functions ================================================================================}
 

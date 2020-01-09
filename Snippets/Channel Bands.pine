@@ -44,7 +44,7 @@ bands(x, type, len, mult) =>
                     upper = highest(len)
                     lower = lowest(len)
                     volatility = atr(len)
-                    [lower + (volatility * mult), upper - (volatility * mult)]
+                    [upper - (volatility * mult) , lower + (volatility * mult)]
 
 _bands_type = input("bollinger", options=["bollinger", "keltner", "atr", "donchian", "chandelier"], title="Channel Bands Type")
 _bands_len = input(30, title="Length")
