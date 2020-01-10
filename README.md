@@ -43,6 +43,10 @@ A library of trading indicators, strategies and code snippets for Pine Script pr
 * [Fisher Transform Strategy](/Strategies/Fisher%20Transform%20Strategy.pine)
 > Fisher Transform with an changeable EMA alpha https://www.mesasoftware.com/papers/UsingTheFisherTransform.pdf
 
+* [Godmode Oscillator Strategy](/Strategies/Godmode%20Oscillator%20Strategy.pine)
+> A rewrite of Godmode Oscillator https://www.tradingview.com/script/HL3vqXUM-Godmode-Oscillator-fresh-bread-generator-free-to-use/  
+> \@author LazyBear, xSilas, Ni6HTH4wK
+
 ---
 ## Indicators
 * [Moving Average Indicator](/Indicators/Moving%20Average%20Strategy.pine)
@@ -59,6 +63,10 @@ A library of trading indicators, strategies and code snippets for Pine Script pr
 
 * [Fisher Transform Indicator](/Indicators/Fisher%20Transform%20Indicator.pine)
 > Fisher Transform with an changeable EMA alpha https://www.mesasoftware.com/papers/UsingTheFisherTransform.pdf
+
+* [Godmode Oscillator Indicator](/Indicators/Godmode%20Oscillator%20Indicator.pine)
+> A rewrite of Godmode Oscillator https://www.tradingview.com/script/HL3vqXUM-Godmode-Oscillator-fresh-bread-generator-free-to-use/  
+> \@author LazyBear, xSilas, Ni6HTH4wK
 
 ---
 ## Snippets

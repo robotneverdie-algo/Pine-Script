@@ -41,3 +41,7 @@ A collection of trading strategies.
 
 * [Fisher Transform Strategy](/Strategies/Fisher%20Transform%20Strategy.pine)
 > Fisher Transform with an changeable EMA alpha https://www.mesasoftware.com/papers/UsingTheFisherTransform.pdf
+
+* [Godmode Oscillator Strategy](/Strategies/Godmode%20Oscillator%20Strategy.pine)
+> A rewrite of Godmode Oscillator https://www.tradingview.com/script/HL3vqXUM-Godmode-Oscillator-fresh-bread-generator-free-to-use/  
+> \@author LazyBear, xSilas, Ni6HTH4wK

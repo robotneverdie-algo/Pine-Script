@@ -17,3 +17,7 @@ A collection of trading indicators.
 
 * [Fisher Transform Indicator](/Indicators/Fisher%20Transform%20Indicator.pine)
 > Fisher Transform with an changeable EMA alpha https://www.mesasoftware.com/papers/UsingTheFisherTransform.pdf
+
+* [Godmode Oscillator Indicator](/Indicators/Godmode%20Oscillator%20Indicator.pine)
+> A rewrite of Godmode Oscillator https://www.tradingview.com/script/HL3vqXUM-Godmode-Oscillator-fresh-bread-generator-free-to-use/  
+> \@author LazyBear, xSilas, Ni6HTH4wK
