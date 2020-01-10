@@ -1,0 +1,229 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © RobotNeverDie
+
+// Description:
+// An collection of momentum indicator used in the code base.
+// * adx - Average Directional Movement Index
+// * adxr - Average Directional Movement Index Rating
+// * apo - Absolute Price Oscillator
+// * aroonosc - Aroon Oscillator
+// * asi - Accumulative Swing Index https://library.tradingtechnologies.com/trade/chrt-ti-accumulative-swing-index.html
+// * bop - Balance Of Power
+// * cci - Commodity Channel Index
+// * cmo - Chande Momentum Oscillator
+// * crsi - Connors RSI https://www.tradingmarkets.com/media/2012/ConnorsRSI-Pullbacks-Guidebook.pdf [1]
+// * dx - Directional Movement Index
+// * imi - Intraday Momentum Index
+// * mfi - Money Flow Index
+// * ppo - Percentage Price Oscillator
+// * roc - Rate of change
+// * rsi - Relative Strength Index
+// * stoch - Stochastic K https://www.freestockcharts.com/help/Content/Indicators/Stochastics.htm [2]
+// * stochrsi - Stochastic Relative Strength Index [2]
+// * ultosc - Ultimate Oscillator
+// * willr - Williams %R
+//
+// References/Notes:
+// [1] Use PercentRank instead of ROC describe in ConnorsRSI Guidebook.
+// [2] Return K not %K: %K = sma(K, pk_len) %D = sma(%K, pd_len)
+//
+// More at https://github.com/robotneverdie-algo/Pine-Script
+
+//{================================================================================== Momentum Functions ===================================================================================}
+
+// Average Directional Movement Index
+adx(len) =>
+	up = change(high)
+	down = -1 * change(low)
+	plus_dm = up > down and up > 0 ? up : 0
+	minus_dm = down > up and down > 0 ? down : 0
+	plus_di = rma(plus_dm, len) / atr(len) * 100
+	minus_di = rma(minus_dm, len) / atr(len) * 100
+	dx = abs(plus_di - minus_di) / abs(plus_di + minus_di) * 100
+	adx = rma(dx, len) * 100
+	[plus_di, minus_di, dx, adx]
+
+// Absolute Price Oscillator
+apo(x, fast_len, slow_len) =>
+    ema(x, fast_len) - ema(x, slow_len)
+
+// Aroon Oscillator
+aroonosc(len) =>
+    up = (len - highestbars(len)) / len * 100
+    down = (len - lowestbars(len)) / len * 100
+    up - down
+
+// Accumulative Swing Index https://library.tradingtechnologies.com/trade/chrt-ti-accumulative-swing-index.html
+asi(x, limit) =>
+    _tr = max(high - x[1], x[1] - low, high - low)
+    er = iff(x[1] > high, high - x[1], iff(x[1] < low, x[1] - low, 0.0))
+    sh = x[1] - open[1]
+    r = _tr - 0.5 * er + 0.25 * sh
+
+    w = (x - x[1] + 0.5 * (x - open) + 0.25 * (x[1] - open[1])) / r
+    k = max(high - x[1], x[1] - low)
+    si = 0.0
+    si := 50.0 * w * (k / limit)
+    cum(si)
+
+// Balance Of Power
+bop(len) =>
+    sma((close - open) / (high - low), len)
+
+// Commodity Channel Index
+cci_(x, len, constant) =>
+    (x - sma(x, len)) / (constant * dev(x, len))
+
+// Chande Momentum Oscillator
+cmo(x, len) =>
+    diff = change(x)
+    up = sum(max(diff, 0), len)
+    down = sum(abs(min(diff, 0)), len)
+    (up - down) / (up + down) * 100
+
+// Intraday Momentum Index
+imi(x, len) =>
+    up = iff(x > open, x - open, 0.0)
+    down = iff(x < open, open - x, 0.0)
+    gains = sum(up, len)
+    losses = sum(down, len)
+    gains / (gains + losses) * 100
+
+// Money Flow Index
+mfi(x, len) =>
+    flow = x * volume
+    diff = change(x)
+    up = diff > 0 ? flow : 0.0
+    down  = diff < 0 ? flow : 0.0
+    ratio = sum(up, len) / sum(down, len)
+    100 - 100 / (1 + ratio)
+
+// Percentage Price Oscillator
+ppo(x, fast_len, slow_len) =>
+    (ema(x, fast_len) - ema(x, slow_len)) / ema(x, slow_len) * 100
+
+// Relative Strength Index
+rsi_(x, len) =>
+    up = max(x - x[1], 0)
+    down = max(x[1] - x, 0)
+    ratio = rma(up, len) / rma(down, len)
+    100 - 100 / (1 + ratio)
+
+// Connors RSI https://www.tradingmarkets.com/media/2012/ConnorsRSI-Pullbacks-Guidebook.pdf
+crsi(x, rsi_len, streak_len, rank_len) =>
+    streak = 0.0
+    diff = sign(change(x))
+    streak := diff == 0 ? 0.0 : (diff == 1 ? max(1, nz(streak[1]) + 1) : min(-1, nz(streak[1]) - 1))
+    avg(rsi_(x, rsi_len), rsi_(streak, streak_len), percentrank(x, rank_len))
+
+// Stochastic K https://www.freestockcharts.com/help/Content/Indicators/Stochastics.htm
+stoch_(x, len) =>
+    (x - lowest(x, len)) / (highest(len) - lowest(len)) * 100
+
+// Ultimate Oscillator
+ultosc(x, len1, len2, len3) =>
+    bp = x - min(low, x[1])
+    tr_ = max(high, x[1]) - min(low, x[1])
+    avg1 = sum(bp, len1) / sum(tr_, len1)
+    avg2 = sum(bp, len2) / sum(tr_, len2)
+    avg3 = sum(bp, len3) / sum(tr_, len3)
+    (4 * avg1 + 2 * avg2 + avg3) / 7 * 100
+
+// Williams %R
+willr(x, len) =>
+    (highest(len) - x) / (highest(len) - lowest(len)) * -100
+
+//{=================================================================================== Momentum Settings ===================================================================================}
+
+_mom_type = input("stochrsi", options=["adx", "adxr", "apo", "aroonosc", "asi", "bop", "cci", "cmo", "crsi", "dx", "imi", "mfi", "ppo", "roc", "rsi", "stoch", "stochrsi", "ultosc", "willr"], title="Momentum Type")
+
+_adx_len = input(14, minval=2, type=input.integer, title="adx: length")
+_adxr_len = input(14, minval=2, type=input.integer, title="adxr: length")
+_adxr_interval = input(14, minval=2, type=input.integer, title="adxr: interval")
+_apo_fast_len = input(10, minval=2, type=input.integer, title="apo: fast length")
+_apo_slow_len = input(20, minval=2, type=input.integer, title="apo: slow length")
+_aroonosc_len = input(14, minval=2, type=input.integer, title="aroonosc: length")
+_asi_limit = input(10000, minval=2, type=input.integer, title="asi: maximum bar limit")
+_bop_len = input(1, minval=2, type=input.integer, title="bop: length")
+_cci_len = input(20, minval=2, type=input.integer, title="cci: length")
+_cci_constant = input(0.015, step=0.001, type=input.float, title="cci: constant")
+_cmo_len = input(9, minval=2, type=input.integer, title="cmo: length")
+_crsi_rsi_len = input(3, minval=2, type=input.integer, title="crsi: rsi length")
+_crsi_updown_len = input(2, minval=2, type=input.integer, title="crsi: up/down length")
+_crsi_roc_len = input(100, minval=2, type=input.integer, title="crsi: roc length")
+_dx_len = input(14, minval=2, type=input.integer, title="dx: length")
+_imi_len = input(14, minval=2, type=input.integer, title="imi: length")
+_mfi_len = input(20, minval=2, type=input.integer, title="mfi: length")
+_ppo_fast_len = input(12, minval=2, type=input.integer, title="ppo: fast length")
+_ppo_slow_len = input(26, minval=2, type=input.integer, title="ppo: slow length")
+_roc_len = input(14, minval=2, type=input.integer, title="roc: length")
+_rsi_len = input(14, minval=2, type=input.integer, title="rsi: length")
+_stoch_len = input(14, minval=2, type=input.integer, title="stoch: length")
+_stochrsi_rsi_len = input(14, minval=2, type=input.integer, title="stochrsi: rsi length")
+_stochrsi_stoch_len = input(14, minval=2, type=input.integer, title="stochrsi: stoch length")
+_ultosc_len1 = input(7, minval=2, type=input.integer, title="ultosc: length1")
+_ultosc_len2 = input(14, minval=2, type=input.integer, title="ultosc: length2")
+_ultosc_len3 = input(28, minval=2, type=input.integer, title="ultosc: length3")
+_willr_len = input(14, minval=2, type=input.integer, title="willr: length")
+
+momentum(src, type) =>
+    if type == "adx"
+        [plus_di, minus_di, dx, adx] = adx(_adx_len)
+        adx
+    else
+        if type == "adxr"
+            [plus_di, minus_di, dx, adx] = adx(_adxr_len)
+            (adx + adx[_adxr_interval]) / 2
+        else
+            if type == "apo"
+                apo(src, _apo_fast_len, _apo_slow_len)
+            else
+                if type == "aroonosc"
+                    aroonosc(_aroonosc_len)
+                else
+                    if type == "asi"
+                        asi(src, _asi_limit)
+                    else
+                        if type == "bop"
+                            bop(_bop_len)
+                        else
+                            if type == "cci"
+                                cci_(src, _cci_len, _cci_constant)
+                            else
+                                if type == "cmo"
+                                    cmo(src, _cmo_len)
+                                else
+                                    if type == "crsi"
+                                        crsi(src, _crsi_rsi_len, _crsi_updown_len, _crsi_roc_len)
+                                    else
+                                        if type == "dx"
+                                            [plus_di, minus_di, dx, adx] = adx(_dx_len)
+                                            dx
+                                        else
+                                            if type == "imi"
+                                                imi(src, _imi_len)
+                                            else
+                                                if type == "mfi"
+                                                    mfi(src, _mfi_len)
+                                                else
+                                                    if type == "ppo"
+                                                        ppo(src, _ppo_fast_len, _ppo_slow_len)
+                                                    else
+                                                        if type == "roc"
+                                                            roc(src, _roc_len)
+                                                        else
+                                                            if type == "rsi"
+                                                                rsi_(src, _rsi_len)
+                                                            else
+                                                                if type == "stoch"
+                                                                    stoch_(src, _stoch_len)
+                                                                else
+                                                                    if type == "stochrsi"
+                                                                        stoch_(rsi_(src, _stochrsi_rsi_len), _stochrsi_stoch_len)
+                                                                    else
+                                                                        if type == "ultosc"
+                                                                            ultosc(src, _ultosc_len1, _ultosc_len2, _ultosc_len3)
+                                                                        else
+                                                                            willr(src, _willr_len)
+
+_mom = momentum(src, _mom_type)

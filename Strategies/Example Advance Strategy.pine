@@ -10,7 +10,7 @@ strategy("Example Advance Strategy", shorttitle="Example Advance Strategy", over
 // * Trend Confirmation - Waddah Attar Explosion.
 // * Entry/Exit - Fisher Transform.
 //
-// Notes:
+// References/Notes:
 // [1] If you wish to see re-entry results increase the Trades Count setting.
 //
 // More at https://github.com/robotneverdie-algo/Pine-Script

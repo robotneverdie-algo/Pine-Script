@@ -2,7 +2,7 @@
 // © RobotNeverDie
 
 // Description:
-// An collection of channel bands used in the code base. [1]
+// An collection of channel bands used in the code base.
 // * bollinger - Bollinger Bands
 // * keltner - Keltner Channels
 // * atr - Average True Range

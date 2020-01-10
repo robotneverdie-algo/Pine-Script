@@ -28,13 +28,40 @@ A collection of code snippets for Pine Script programming language.
 > * wma - Weighted Moving Average
 > * zlema - Zero Lag Exponential Moving Average http://www.mesasoftware.com/papers/ZeroLag.pdf  
 >
-> References/Notes:
+> References/Notes:  
 > [1] TradingView will slow down when their is a long chain of if/else statement, so have to split MA function.
 
 * [Channel Bands](/Snippets/Channel%20Bands.pine)
-> An collection of channel bands used in the code base. [1]
+> An collection of channel bands used in the code base.
 > * bollinger - Bollinger Bands
 > * keltner - Keltner Channels
 > * atr - Average True Range
 > * donchian - Bollinger Bands
 > * chandelier - Chandelier Exit
+
+* [Momentum](/Snippets/Momentum.pine)
+> Description:
+> An collection of momentum indicator used in the code base.
+> * adx - Average Directional Movement Index
+> * adxr - Average Directional Movement Index Rating
+> * apo - Absolute Price Oscillator
+> * aroonosc - Aroon Oscillator
+> * asi - Accumulative Swing Index https://library.tradingtechnologies.com/trade/chrt-ti-accumulative-swing-index.html
+> * bop - Balance Of Power
+> * cci - Commodity Channel Index
+> * cmo - Chande Momentum Oscillator
+> * crsi - Connors RSI https://www.tradingmarkets.com/media/2012/ConnorsRSI-Pullbacks-Guidebook.pdf [1]
+> * dx - Directional Movement Index
+> * imi - Intraday Momentum Index
+> * mfi - Money Flow Index
+> * ppo - Percentage Price Oscillator
+> * roc - Rate of change
+> * rsi - Relative Strength Index
+> * stoch - Stochastic K https://www.freestockcharts.com/help/Content/Indicators/Stochastics.htm [2]
+> * stochrsi - Stochastic Relative Strength Index [2]
+> * ultosc - Ultimate Oscillator
+> * willr - Williams %R
+>
+> References/Notes:  
+> [1] Use PercentRank instead of ROC describe in ConnorsRSI Guidebook.  
+> [2] Return K not %K: %K = sma(K, pk_len) %D = sma(%K, pd_len)
