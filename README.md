@@ -47,6 +47,15 @@ A library of trading indicators, strategies and code snippets for Pine Script pr
 > A rewrite of Godmode Oscillator https://www.tradingview.com/script/HL3vqXUM-Godmode-Oscillator-fresh-bread-generator-free-to-use/  
 > \@author LazyBear, xSilas, Ni6HTH4wK
 
+* [Requested 001 Strategy](/Strategies/Requested%20001%20Strategy.pine)
+> Requested strategy by discord user Mrhutqc#2962  
+> A rewrite of Logical_Strat_Template_v0.2  
+> \@author MrhutQC, Ozine  
+> \@thanks DarkRico, FurryBoffin  
+> * Trend Following - Higher Timeframe Moving Average.
+> * Trend Confirmation - Waddah Attar Explosion.
+> * Entry/Exit - Fisher Transform, Godmode Oscillator. https://www.tradingview.com/script/HL3vqXUM-Godmode-Oscillator-fresh-bread-generator-free-to-use/
+
 ---
 ## Indicators
 * [Moving Average Indicator](/Indicators/Moving%20Average%20Strategy.pine)
