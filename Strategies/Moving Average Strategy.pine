@@ -256,7 +256,7 @@ _trades_count = input(1, minval=1, title="Trades Count")
 _src = input("ohlc4", options=["open", "high", "low", "close", "hl2", "hlc3", "ohlc4", "vwap"], title="Source")
 _use_tf = input(false, type=input.bool, title="Use Different Timeframe")
 _tf = input("240", type=input.resolution, title="Timeframe")
-_market_position = input("Both", options=["Both", "Long", "Short"], title="Strategy Market Position")
+_market_position = input("Both", options=["Both", "Long", "Short"], title="Market Position")
 _strategy_type = input("Tri Cross [Fast x Mid x Slow]", options=["Price Cross [Price X Slow]", "Two Cross [Fast x Slow]", "Tri Cross [Fast x Mid x Slow]"], title="Strategy Type")
 
 

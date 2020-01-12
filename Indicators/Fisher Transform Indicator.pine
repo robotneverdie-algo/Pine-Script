@@ -75,7 +75,7 @@ bar_window() =>
 
 _strategy_header = input(true, type=input.bool, title="{====================== Strategy Settings =======================}")
 _trades_count = input(1, minval=1, title="Trades Count")
-_market_position = input("Both", options=["Both", "Long", "Short"], title="Strategy Market Position")
+_market_position = input("Both", options=["Both", "Long", "Short"], title="Market Position")
 
 //{============================================================================== Fisher Transform Setting =================================================================================}
 
