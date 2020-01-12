@@ -153,6 +153,12 @@ A library of trading indicators, strategies and code snippets for Pine Script pr
 > [1] Use PercentRank instead of ROC describe in ConnorsRSI Guidebook.  
 > [2] Return K not %K: %K = sma(K, pk_len) %D = sma(%K, pd_len)
 
+* [Ticker](/Snippets/Ticker.pine)
+>  Find if current ticker has quote currency. [1]
+>
+>  References/Notes:  
+>  [1] Base currency must have three letters
+
 ---
 ## Copying
 You may copy and/or modified this project source code on the condition that you released under the same license and keep copyright notice when distributing this project source code.
