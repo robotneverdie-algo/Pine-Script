@@ -1,0 +1,421 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © RobotNeverDie
+
+//@version=4
+strategy("Requested 002 Strategy", shorttitle="Requested 002 Strategy", overlay=true, pyramiding=100, initial_capital=10000, default_qty_type=strategy.percent_of_equity, default_qty_value=3)
+
+// Description:
+// Requested strategy by discord user IamLegion#6493. [1]
+// * Trend Following - 2 Higher Timeframe Moving Average. [2]
+// * Trend Confirmation - 2 Lower Timeframe Moving Average. [2]
+// * Entry/Exit - Entry: 2 Moving Average, Connors RSI, Stochastic %K & %D and Bollinger BandWidth Exit: MACD and RSI
+// * Stop-Loss and Profit-Taking - Fix Percentage, ATR Percentage
+//
+// References/Notes:
+// [1] Strategy mainly use for backtesting setting for ProfitTrailer bot.
+// [2] Use for turning on the bot.
+//
+// More at https://github.com/robotneverdie-algo/Pine-Script
+
+//{=================================================================================== Misc. Functions =====================================================================================}
+
+source(x) =>
+    if x == "open"
+        open
+    else
+        if x == "high"
+            high
+        else
+            if x == "low"
+                low
+            else
+                if x == "close"
+                    close
+                else
+                    if x == "hl2"
+                        hl2
+                    else
+                        if x == "hlc3"
+                            hlc3
+                        else
+                            if x == "ohlc4"
+                                ohlc4
+                            else
+                                vwap
+
+// String format of min tick value for the current symbol to eight decimal places.
+min_tick_format() =>
+    format = "#.#"
+    for i = 1 to 8
+        if pow(10, i) * syminfo.mintick < 1
+            format := format + "#"
+    format
+
+// Draw an panel to display infomation on chart.
+info_panel(x, y, panel_color, text_color, line_num, message) =>
+    content = ""
+    for l = line_num to 0
+        content := content + "\n"
+    content := content + message
+    var label panel = na
+    label.delete(panel)
+    panel := label.new(x, y, text=content, xloc=xloc.bar_time, yloc=yloc.price, color=panel_color, textcolor=text_color, style=label.style_labelup)
+
+//{=============================================================================== Moving Average Functions ================================================================================}
+
+// Double Exponential Moving Average
+dema(x, len) =>
+    e = ema(x, len)
+    2 * e - ema(e, len)
+
+// Hull Moving Average
+hull(x, len) =>
+    wma(2 * wma(x, len / 2) - wma(x, len), round(sqrt(len)))
+
+moving_average(src, type, len) =>
+    if type == "dema"
+        dema(src, len)
+    else
+        if type == "ema"
+            ema(src, len)
+        else
+            if type == "hull"
+                hull(src, len)
+            else
+                sma(src, len)
+//{================================================================================== Momentum Functions ===================================================================================}
+
+// Relative Strength Index
+rsi_(x, len) =>
+    up = max(x - x[1], 0)
+    down = max(x[1] - x, 0)
+    ratio = rma(up, len) / rma(down, len)
+    100 - 100 / (1 + ratio)
+
+// Connors RSI https://www.tradingmarkets.com/media/2012/ConnorsRSI-Pullbacks-Guidebook.pdf
+crsi(x, rsi_len, streak_len, rank_len) =>
+    streak = 0.0
+    diff = sign(change(x))
+    streak := diff == 0 ? 0.0 : (diff == 1 ? max(1, nz(streak[1]) + 1) : min(-1, nz(streak[1]) - 1))
+    avg(rsi_(x, rsi_len), rsi_(streak, streak_len), percentrank(x, rank_len))
+
+// Stochastic K https://www.freestockcharts.com/help/Content/Indicators/Stochastics.htm
+stoch_(x, len) =>
+    (x - lowest(x, len)) / (highest(len) - lowest(len)) * 100
+
+//{============================================================================= Backtest Date Range Setting ===============================================================================}
+
+_backtest_header = input(true, type=input.bool, title="{================== Backtest Date Range Setting =================}")
+_use_date_range = input(false, type=input.bool, title="Use Date Range")
+_start_day = input(1, minval=1, maxval=31, title="Start Date")
+_start_month = input(1, minval=1, maxval=12, title="Start Month")
+_start_year = input(1950, minval=2011, title="Start Year")
+_end_day = input(1, minval=1, maxval=31, title="End Date")
+_end_month = input(1, minval=1, maxval=12, title="End Month")
+_end_year = input(2050, minval=2019, title="End Year")
+
+_start = timestamp(_start_year, _start_month, _start_day, 0, 0)
+_end = timestamp(_end_year, _end_month, _end_day, 0, 0)
+
+// Bar window Function
+bar_window() =>
+    if _use_date_range
+        time >= _start and time <= _end
+    else
+        true
+
+//{=================================================================================== Strategy Setting =====================================================================================}
+
+_strategy_header = input(true, type=input.bool, title="{====================== Strategy Settings =======================}")
+
+_trades_count = input(1, minval=1, title="Trades Count")
+_src = input("close", options=["open", "high", "low", "close", "hl2", "hlc3", "ohlc4", "vwap"], title="Source")
+_market_position = input("Long", options=["Both", "Long", "Short"], title="Market Position")
+
+//{======================================================================== Higher Timeframe Moving Average Setting ========================================================================}
+
+_ht_header = input(true, type=input.bool, title="{=========== Higher Timeframe Moving Average Setting ============}")
+// Higher Timeframe Moving Average
+_use_ht = input(true, type=input.bool, title="Use Higher Timeframe Moving Average")
+_ht_src = input("close", options=["open", "high", "low", "close", "hl2", "hlc3", "ohlc4", "vwap"], title="Source")
+_ht_tf = input("D", type=input.resolution, title="Timeframe")
+
+_ht_fast_type = input("sma", options=["dema", "ema", "hull", "sma"], title="Fast MA Type")
+_ht_fast_len = input(30, title="Fast MA Length")
+
+_ht_slow_type = input("sma", options=["dema", "ema", "hull", "sma"], title="Slow MA Type")
+_ht_slow_len = input(60, title="Slow MA Length")
+
+//{======================================================================== Lower Timeframe Moving Average Setting =========================================================================}
+
+_lt_header = input(true, type=input.bool, title="{============ Lower Timeframe Moving Average Setting ============}")
+// Lower Timeframe Moving Average
+_use_lt = input(true, type=input.bool, title="Use Lower Timeframe Moving Average")
+_lt_src = input("close", options=["open", "high", "low", "close", "hl2", "hlc3", "ohlc4", "vwap"], title="Source")
+_lt_tf = input("60", type=input.resolution, title="Timeframe")
+
+_lt_fast_type = input("ema", options=["dema", "ema", "hull", "sma"], title="Fast MA Type")
+_lt_fast_len = input(30, title="Length")
+
+_lt_slow_type = input("ema", options=["dema", "ema", "hull", "sma"], title="Slow MA Type")
+_lt_slow_len = input(60, title="Length")
+
+//{================================================================================== Entry/Exit Setting ===================================================================================}
+
+_entry_header = input(true, type=input.bool, title="{======================== Entry Setting =========================}")
+
+_fast_type = input("hull", options=["dema", "ema", "hull", "sma"], title="Fast MA Type")
+_fast_len = input(10, title="Length")
+
+_slow_type = input("hull", options=["dema", "ema", "hull", "sma"], title="Slow MA Type")
+_slow_len = input(20, title="Length")
+
+_crsi_rsi_len = input(3, minval=2, type=input.integer, title="crsi: rsi length")
+_crsi_updown_len = input(2, minval=2, type=input.integer, title="crsi: up/down length")
+_crsi_roc_len = input(100, minval=2, type=input.integer, title="crsi: roc length")
+_crsi_oversold = input(20, "crsi: oversold level")
+_crsi_overbough = input(80, "crsi: overbough level")
+
+_stoch_k_len = input(14, title="stoch: k")
+_stoch_d_len = input(3, title="stoch: d")
+_stoch_smooth_len = input(3, title="stoch: smooth")
+_stoch_oversold = input(20, "stoch: oversold level")
+_stoch_overbough = input(80, "stoch: overbough level")
+
+_bbw_ma_len = input(6, title="bandwidth: ma Length")
+_bbw_stdev_len = input(14, title="bandwidth: stdev Length")
+_bbw_width = input(4.0, type=input.float, title="bandwidth: width %")
+
+_exit_header = input(true, type=input.bool, title="{========================= Exit Setting =========================}")
+_use_exit = input(true, type=input.bool, title="Use Exit")
+
+_macd_fast_len = input(10, title="MACD: fast length")
+_macd_slow_len = input(20, title="MACD: slow length")
+_macd_signal_len = input(20, title="MACD: signal length")
+_macd_pspread = input(3, type=input.float, title="MACD: spread %") / 100
+
+_rsi_len = input(3, minval=2, type=input.integer, title="rsi: length")
+_rsi_oversold = input(20, "rsi: oversold level")
+_rsi_overbough = input(80, "rsi: overbough level")
+
+//{========================================================================= Stop-Loss and Profit-Taking Setting ===========================================================================}
+
+_sl_tp_header = input(true, type=input.bool, title="{============== Stop-Loss and Profit-Taking Setting =============}")
+_use_sl_tp = input(true, type=input.bool, title="Use Stop-Loss and Profit-Taking")
+_sl_tp_type = input("Fix Percentage", options=["Fix Percentage", "ATR Percentage"], title="Type")
+
+_fp_header = input(true, type=input.bool, title="{==================== Fix Percentage Setting ====================}")
+_stop_percentage = input(2.0, type=input.float, title="Stop Loss %") / 100
+_tp_percentage = input(4.0, type=input.float, title="Take Profit %") / 100
+
+_ap_header = input(true, type=input.bool, title="{==================== ATR Percentage Setting ====================}")
+_atr_len = input(10, title="Length")
+_atr_type = input("ema", options=["dema", "ema", "hull", "sma"], title="Type")
+_atr_exit = input(1.5, type=input.float, title="Exit %")
+
+//{==================================================================================== Strategy Logic =====================================================================================}
+
+_source = source(_src)
+
+_atr_percentage = moving_average(tr(true), _atr_type, _atr_len) / moving_average(_source, _atr_type, _atr_len) * 100
+
+_ht_source = security(syminfo.tickerid, _ht_tf, source(_ht_src))
+_lt_source = security(syminfo.tickerid, _lt_tf, source(_lt_src))
+
+_ht_fast = moving_average(_ht_source, _ht_fast_type, _ht_fast_len)
+_ht_slow = moving_average(_ht_source, _ht_slow_type, _ht_slow_len)
+_ht_trend = _use_ht ? (_ht_fast > _ht_slow ? "Upward" : "Downward") : "None"
+
+_lt_fast = moving_average(_lt_source, _lt_fast_type, _lt_fast_len)
+_lt_slow = moving_average(_lt_source, _lt_slow_type, _lt_slow_len)
+_lt_trend = _use_lt ? (_lt_fast > _lt_slow ? "Upward" : "Downward") : "None"
+
+_fast = moving_average(_source, _fast_type, _fast_len)
+_slow = moving_average(_source, _slow_type, _slow_len)
+
+_crsi = crsi(_source, _crsi_rsi_len, _crsi_updown_len, _crsi_roc_len)
+
+_fast_k = stoch_(_source, _stoch_k_len)
+_slow_k = sma(_fast_k, _stoch_smooth_len)
+_slow_d = sma(_slow_k, _stoch_d_len)
+
+_mid = sma(_source, _bbw_ma_len)
+_upper = _mid + stdev(_source, _bbw_stdev_len)
+_lower = _mid - stdev(_source, _bbw_stdev_len)
+_bandwidth = ((_upper - _lower) / _mid) * 100
+
+macd_spread(src, fast_len, slow_len, signal_len) =>
+    macd = ema(src, fast_len) - ema(src, slow_len)
+    signal = ema(macd, signal_len)
+    (macd / signal - 1) * 100
+
+_macd_spread = macd_spread(_source, _macd_fast_len, _macd_slow_len, _macd_signal_len)
+_rsi = rsi_(_source, _rsi_len)
+
+
+//{=================================================================================== Strategy Signal =====================================================================================}
+
+_ht_long = _ht_trend=="Upward" or _ht_trend=="None"
+_ht_short = _ht_trend=="Downward" or _ht_trend=="None"
+
+_lt_long = _lt_trend=="Upward" or _lt_trend=="None"
+_lt_short = _lt_trend=="Downward" or _lt_trend=="None"
+
+_ma_long = falling(_fast, 1) and falling(_slow, 1)
+_ma_short = rising(_fast, 1) and rising(_slow, 1)
+
+_crsi_long = _crsi < _crsi_oversold
+_crsi_short = _crsi > _crsi_overbough
+
+_stoch_long = _slow_k < _stoch_oversold and _slow_d < _stoch_oversold
+_stoch_short = _slow_k > _stoch_overbough and _slow_d > _stoch_overbough
+
+_bbw_long = _bandwidth < _bbw_width
+_bbw_short = _bandwidth < _bbw_width
+
+_macd_xlong = _macd_spread > _macd_pspread
+_macd_xshort = _macd_spread < -_macd_pspread
+
+_rsi_xlong = _rsi > _rsi_overbough
+_rsi_xshort = _rsi < _rsi_oversold
+
+_long = _ht_long and _lt_long and _ma_long and _crsi_long and _stoch_long and _bbw_long
+_short = _ht_short and _lt_short and _ma_short and _crsi_short and _stoch_short and _bbw_short
+
+_xlong = _use_exit ? _macd_xlong : false
+_xshort = _use_exit ? _macd_xshort : false
+
+var _long_count = 0
+var _short_count = 0
+
+var _when_long = 0
+var _when_short = 0
+var _when_exit = 0
+
+_in_long = _when_long > _when_short and _when_long > _when_exit
+_in_short = _when_short > _when_long and _when_short > _when_exit
+_in_exit = _when_exit > _when_long and _when_exit > _when_short
+
+if _long
+    if _in_short or _in_exit
+        _long_count := 1
+    else
+        _long_count := nz(_long_count[1]) + 1
+    _short_count := 0
+    _in_short := false
+    if _long_count <= _trades_count
+        _when_long := time
+
+if _short
+    if _in_long or _in_exit
+        _short_count := 1
+    else
+        _short_count := nz(_short_count[1]) + 1
+    _long_count := 0
+    _in_long := false
+    if _short_count <= _trades_count
+        _when_short := time
+
+if (_xlong and _in_long) or (_xshort and _in_short)
+    _when_exit := time
+
+_enter_long = _when_long == time and bar_window() and (_market_position == "Long" or _market_position == "Both")
+_enter_short = _when_short == time and bar_window() and (_market_position == "Short" or _market_position == "Both")
+_exit_trade = _when_exit == time
+
+var _entry_price = 0.0
+var float _stop = na
+var float _tp = na
+
+var float _hit_stop = na
+var float _hit_tp = na
+
+if _enter_long or _in_long
+    if _enter_long
+        _entry_price := close
+        _stop := iff(_sl_tp_type=="Fix Percentage", _entry_price * (1 - _stop_percentage), na)
+        _tp := iff(_sl_tp_type=="Fix Percentage", _entry_price * (1 + _tp_percentage), na)
+
+    if _use_sl_tp and _in_long
+        if _sl_tp_type=="Fix Percentage"
+            _hit_stop := crossunder(low, _stop) ? _stop : na
+            _hit_tp := crossover(high, _tp) ? _tp : na
+        else
+            if _atr_percentage < _atr_exit
+                if close > _entry_price
+                    _hit_tp := close
+                else
+                    _hit_stop := close
+
+else
+    if _enter_short or _in_short
+        if _enter_short
+            _entry_price := close
+            _stop := iff(_sl_tp_type=="Fix Percentage", _entry_price * (1 + _stop_percentage), na)
+            _tp := iff(_sl_tp_type=="Fix Percentage", _entry_price * (1 - _tp_percentage), na)
+
+        if _use_sl_tp and _in_short
+            if _sl_tp_type=="Fix Percentage"
+                _hit_stop := crossover(high, _stop) ? _stop : na
+                _hit_tp := crossunder(low, _tp) ? _tp : na
+            else
+                if _atr_percentage < _atr_exit
+                    if close < _entry_price
+                        _hit_tp := close
+                    else
+                        _hit_stop := close
+    else
+        if _exit_trade or _in_exit
+            _entry_price := na
+            _stop := na
+            _tp := na
+            _hit_stop := na
+            _hit_tp := na
+
+if _use_sl_tp and (not na(_hit_stop) or not na(_hit_tp))
+    _when_exit := time
+    _exit_trade = true
+
+strategy.entry("Long", strategy.long, when=_enter_long)
+strategy.entry("Short", strategy.short, when=_enter_short)
+strategy.close_all(when=_exit_trade)
+
+//{==================================================================================== Strategy Draw ======================================================================================}
+
+plot(_fast, linewidth=2, color=rising(_fast, 1) ? #1ca168 : #ce2020, transp=0, title="Fast")
+plot(_slow, linewidth=2, color=rising(_slow, 1) ? #1ca168 : #ce2020, transp=0, title="Slow")
+
+plotshape(_enter_long, style=shape.triangleup, location=location.bottom, color=#1ca168)
+plotshape(_enter_short, style=shape.triangleup, location=location.bottom, color=#ce2020)
+plotshape(_exit_trade, style=shape.triangledown, location=location.bottom, color=#ffc100)
+barcolor(_enter_long ? #1ca168 : _enter_short ? #ce2020 : _exit_trade ? #ffc100 : na)
+
+plotchar(_use_sl_tp ? _hit_stop : na , textcolor=#ffff33, location=location.absolute, char='', text="Stop")
+plotchar(_use_sl_tp ? _hit_tp : na, textcolor=#ffff33, location=location.absolute, char='', text="TP")
+
+plot(_use_sl_tp ? _stop : na, style=plot.style_circles, linewidth=2, color=#ce2020, transp=0, title="Stop")
+plot(_use_sl_tp ? _tp : na , style=plot.style_circles, linewidth=2, color=#1ca168, transp=0, title="Tp")
+
+// Draw an info panel for Stop-Loss, Profit-Taking and Position Sizing
+_panel_x = time + round(change(time) * 20)
+_panel_y = highest(50)
+_panel_color = _in_long ? #1ca168 : _in_short ? #ce2020 : #051c4d
+_text_color = #ffc100
+_price_format = min_tick_format()
+
+info_panel(_panel_x, _panel_y, _panel_color, _text_color, 28, "{=========== {\\/} ===========}")
+info_panel(_panel_x, _panel_y, _panel_color, _text_color, 26, "ATR Percentage: " + tostring(_atr_percentage, _price_format))
+// info_panel(_panel_x, _panel_y, _panel_color, _text_color, 20, "")
+info_panel(_panel_x, _panel_y, _panel_color, _text_color, 24, "Take Profit %: " + tostring(_tp_percentage * 100, "#.##"))
+info_panel(_panel_x, _panel_y, _panel_color, _text_color, 22, "Stop Loss %: " + tostring(_stop_percentage * 100, "#.##"))
+info_panel(_panel_x, _panel_y, _panel_color, _text_color, 20, "RSI: " + tostring(_rsi, _price_format))
+info_panel(_panel_x, _panel_y, _panel_color, _text_color, 18, "MACD Spread: "  + tostring(_macd_spread, _price_format))
+info_panel(_panel_x, _panel_y, _panel_color, _text_color, 16, "Bollinger BandWidth: "  + tostring(_bandwidth, _price_format))
+info_panel(_panel_x, _panel_y, _panel_color, _text_color, 14, "Stochastic %D: "  + tostring(_slow_d, _price_format))
+info_panel(_panel_x, _panel_y, _panel_color, _text_color, 12, "Stochastic %K: "  + tostring(_slow_k, _price_format))
+info_panel(_panel_x, _panel_y, _panel_color, _text_color, 10, "Connors RSI: "  + tostring(_crsi, _price_format))
+info_panel(_panel_x, _panel_y, _panel_color, _text_color, 8, "Slow Slope: " + (rising(_slow, 1) ? "Positive" : "Negative"))
+info_panel(_panel_x, _panel_y, _panel_color, _text_color, 6, "Fast Slope: " + (rising(_fast, 1) ? "Positive" : "Negative"))
+info_panel(_panel_x, _panel_y, _panel_color, _text_color, 4, "LT Trend: " + _lt_trend)
+info_panel(_panel_x, _panel_y, _panel_color, _text_color, 2, "HT Trend: " + _ht_trend)
+info_panel(_panel_x, _panel_y, _panel_color, _text_color, 0, "{=========== {\\/} ===========}")

@@ -56,6 +56,17 @@ A library of trading indicators, strategies and code snippets for Pine Script pr
 > * Trend Confirmation - Waddah Attar Explosion.
 > * Entry/Exit - Fisher Transform, Godmode Oscillator. https://www.tradingview.com/script/HL3vqXUM-Godmode-Oscillator-fresh-bread-generator-free-to-use/
 
+* [Requested 002 Strategy](/Strategies/Requested%20002%20Strategy.pine)
+> Requested strategy by discord user IamLegion#6493. [1]
+> * Trend Following - 2 Higher Timeframe Moving Average. [2]
+> * Trend Confirmation - 2 Lower Timeframe Moving Average. [2]
+> * Entry/Exit - Entry: 2 Moving Average, Connors RSI, Stochastic %K & %D and Bollinger BandWidth Exit: MACD and RSI
+> * Stop-Loss and Profit-Taking - Fix Percentage, ATR Percentage  
+>
+> References/Notes:  
+> [1] Strategy mainly use for backtesting setting for ProfitTrailer bot.  
+> [2] Use for turning on the bot.  
+
 ---
 ## Indicators
 * [Moving Average Indicator](/Indicators/Moving%20Average%20Strategy.pine)
