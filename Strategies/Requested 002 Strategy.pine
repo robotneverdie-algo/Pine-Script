@@ -170,15 +170,13 @@ _fast_len = input(10, title="Length")
 _slow_type = input("hull", options=["dema", "ema", "hull", "sma"], title="Slow MA Type")
 _slow_len = input(20, title="Length")
 
-_crsi_rsi_len = input(3, minval=2, type=input.integer, title="crsi: rsi length")
-_crsi_updown_len = input(2, minval=2, type=input.integer, title="crsi: up/down length")
-_crsi_roc_len = input(100, minval=2, type=input.integer, title="crsi: roc length")
+_crsi_rsi_len = input(2, minval=2, type=input.integer, title="crsi: rsi length")
 _crsi_oversold = input(20, "crsi: oversold level")
 _crsi_overbough = input(80, "crsi: overbough level")
 
-_stoch_k_len = input(14, title="stoch: k")
+_stoch_k_len = input(14, title="stoch: length")
+_stoch_smooth_len = input(3, title="stoch: k")
 _stoch_d_len = input(3, title="stoch: d")
-_stoch_smooth_len = input(3, title="stoch: smooth")
 _stoch_oversold = input(20, "stoch: oversold level")
 _stoch_overbough = input(80, "stoch: overbough level")
 
@@ -210,6 +208,7 @@ _tp_percentage = input(4.0, type=input.float, title="Take Profit %") / 100
 
 _ap_header = input(true, type=input.bool, title="{==================== ATR Percentage Setting ====================}")
 _atr_len = input(10, title="Length")
+_atr_offset  = input(1, title="Offset")
 _atr_type = input("ema", options=["dema", "ema", "hull", "sma"], title="Type")
 _atr_exit = input(1.5, type=input.float, title="Exit %")
 
@@ -233,7 +232,7 @@ _lt_trend = _use_lt ? (_lt_fast > _lt_slow ? "Upward" : "Downward") : "None"
 _fast = moving_average(_source, _fast_type, _fast_len)
 _slow = moving_average(_source, _slow_type, _slow_len)
 
-_crsi = crsi(_source, _crsi_rsi_len, _crsi_updown_len, _crsi_roc_len)
+_crsi = rsi_(_source, _crsi_rsi_len)
 
 _fast_k = stoch_(_source, _stoch_k_len)
 _slow_k = sma(_fast_k, _stoch_smooth_len)
@@ -341,7 +340,7 @@ if _enter_long or _in_long
             _hit_stop := crossunder(low, _stop) ? _stop : na
             _hit_tp := crossover(high, _tp) ? _tp : na
         else
-            if _atr_percentage < _atr_exit
+            if _atr_percentage[_atr_offset] <= _atr_exit
                 if close > _entry_price
                     _hit_tp := close
                 else
@@ -359,7 +358,7 @@ else
                 _hit_stop := crossover(high, _stop) ? _stop : na
                 _hit_tp := crossunder(low, _tp) ? _tp : na
             else
-                if _atr_percentage < _atr_exit
+                if _atr_percentage[_atr_offset] <= _atr_exit
                     if close < _entry_price
                         _hit_tp := close
                     else
