@@ -103,6 +103,7 @@ has_quote(quote) =>
                 base = alphabet(i) + alphabet(j) + alphabet(k)
                 if syminfo.ticker == base + quote
                     x := true
+                    break
                 // Note: Add more 3 base letter gives error: Loop takes too long to execute (> 200ms)
                 // for l = 0 to 25
                 //     base = alphabet(i) + alphabet(j) + alphabet(k) + alphabet(l)
