@@ -583,7 +583,7 @@ _exit_trade = _when_exit == time
 
 plot(_strategy_type == "Two Cross [Fast x Slow]" or _strategy_type == "Tri Cross [Fast x Mid x Slow]" ? _fast : na, linewidth=2, color=#ff8fc2, transp=0, title="Fast")
 plot(_strategy_type == "Tri Cross [Fast x Mid x Slow]" ? _mid : na, linewidth=2, color=#73ffdf, transp=0, title="Mid")
-plot(_slow, linewidth=2, color=	#172856, transp=0, title="Slow")
+plot(_slow, linewidth=2, color=#5679d8, transp=0, title="Slow")
 
 plotshape(_enter_long, style=shape.xcross, location=location.abovebar, color=#1ca168)
 plotshape(_enter_short, style=shape.xcross, location=location.abovebar, color=#ce2020)
