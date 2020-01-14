@@ -31,22 +31,6 @@ A library of trading indicators, strategies and code snippets for Pine Script pr
 > References/Notes:  
 > [1] If you wish to see re-entry results increase the Trades Count setting.
 
-* [Moving Average Strategy](/Strategies/Moving%20Average%20Strategy.pine)
-> Moving average cross strategies with three type:
-> Price Cross - When price cross the slow ma
-> Two Cross - When fast ma cross the slow ma
-> Tri Cross - When fast ma cross mid, slow ma
-
-* [Waddah Attar Explosion Strategy](/Strategies/Waddah%20Attar%20Explosion%20Strategy.pine)
-> Waddah Attar Explosion with custom moving averages and exit strategies
-
-* [Fisher Transform Strategy](/Strategies/Fisher%20Transform%20Strategy.pine)
-> Fisher Transform with an changeable EMA alpha https://www.mesasoftware.com/papers/UsingTheFisherTransform.pdf
-
-* [Godmode Oscillator Strategy](/Strategies/Godmode%20Oscillator%20Strategy.pine)
-> A rewrite of Godmode Oscillator https://www.tradingview.com/script/HL3vqXUM-Godmode-Oscillator-fresh-bread-generator-free-to-use/  
-> \@author LazyBear, xSilas, Ni6HTH4wK
-
 * [Requested 001 Strategy](/Strategies/Requested%20001%20Strategy.pine)
 > Requested strategy by discord user Mrhutqc#2962  
 > A rewrite of Logical_Strat_Template_v0.2  
