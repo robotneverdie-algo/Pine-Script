@@ -5,112 +5,15 @@
 study("Ticker", shorttitle="Ticker", overlay=false)
 
 // Description:
-// Find if current ticker has quote currency. [1]
-//
-// References/Notes:
-// [1] Base currency must have three letters
+// Find if current ticker has quote currency.
 //
 // More at https://github.com/robotneverdie-algo/Pine-Script
 
 //{=================================================================================== Misc. Functions =====================================================================================}
 
-alphabet2(i) =>
-    if i == 12
-        "M"
-    else
-        if i == 13
-            "N"
-        else
-            if i == 14
-                "O"
-            else
-                if i == 15
-                    "P"
-                else
-                    if i == 16
-                        "Q"
-                    else
-                        if i == 17
-                            "R"
-                        else
-                            if i == 18
-                                "S"
-                            else
-                                if i == 19
-                                    "T"
-                                else
-                                    if i == 20
-                                        "U"
-                                    else
-                                        if i == 21
-                                            "V"
-                                        else
-                                            if i == 22
-                                                "W"
-                                            else
-                                                if i == 23
-                                                    "X"
-                                                else
-                                                    if i == 24
-                                                        "Y"
-                                                    else
-                                                        "Z"
-
-alphabet(i) =>
-    if i == 0
-        "A"
-    else
-        if i == 1
-            "B"
-        else
-            if i == 2
-                "C"
-            else
-                if i == 3
-                    "D"
-                else
-                    if i == 4
-                        "E"
-                    else
-                        if i == 5
-                            "F"
-                        else
-                            if i == 6
-                                "G"
-                            else
-                                if i == 7
-                                    "H"
-                                else
-                                    if i == 8
-                                        "I"
-                                    else
-                                        if i == 9
-                                            "J"
-                                        else
-                                            if i == 10
-                                                "K"
-                                            else
-                                                if i == 11
-                                                    "L"
-                                                else
-                                                    alphabet2(i)
-
 has_quote(quote) =>
-    bool x = false
-    for i = 0 to 25
-        for j = 0 to 25
-            for k = 0 to 25
-                base = alphabet(i) + alphabet(j) + alphabet(k)
-                if syminfo.ticker == base + quote
-                    x := true
-                    break
-                // Note: Add more 3 base letter gives error: Loop takes too long to execute (> 200ms)
-                // for l = 0 to 25
-                //     base = alphabet(i) + alphabet(j) + alphabet(k) + alphabet(l)
-                //     if syminfo.ticker == base + quote
-                //         x := true
-                //         break
-    x
+    syminfo.currency == quote
+
 _quote = input("BTC", type=input.string, title="Quote")
 var _has_quote = has_quote(_quote)
 plot(_has_quote ? 1 : 0)

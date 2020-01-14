@@ -68,7 +68,4 @@ A collection of code snippets for Pine Script programming language.
 > [2] Return K not %K: %K = sma(K, pk_len) %D = sma(%K, pd_len)
 
 * [Ticker](/Snippets/Ticker.pine)
->  Find if current ticker has quote currency. [1]
->
->  References/Notes:  
->  [1] Base currency must have three letters
+>  Find if current ticker has quote currency.
