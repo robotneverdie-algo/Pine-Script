@@ -96,6 +96,7 @@ A library of trading indicators, strategies and code snippets for Pine Script pr
 > * cvwma - Coefficient of Variation Weighted Moving Average https://www.tradingview.com/script/0dBtJvhu-Stratus-DW/
 > * dema - Double Exponential Moving Average
 > * donchian - Donchian Middle Channel
+> * ecema - Error Corrected EMA http://www.mesasoftware.com/papers/ZeroLag.pdf
 > * ema - Exponential Moving Average
 > * frama - Fractal Adaptive Moving Average http://www.mesasoftware.com/papers/FRAMA.pdf
 > * hull - Hull Moving Average
@@ -113,7 +114,7 @@ A library of trading indicators, strategies and code snippets for Pine Script pr
 > * vidya - Variable Index Dynamic Average https://www.tradingview.com/script/hdrf0fXV-Variable-Index-Dynamic-Average-VIDYA/
 > * vwma - Volume-Weighted Moving Average
 > * wma - Weighted Moving Average
-> * zlema - Zero Lag Exponential Moving Average http://www.mesasoftware.com/papers/ZeroLag.pdf  
+> * zlema - Zero Lag Exponential Moving Average https://www.fmlabs.com/reference/default.htm?url=ZeroLagExpMA.htm
 >
 > References/Notes:  
 > [1] TradingView will slow down when their is a long chain of if/else statement, so have to split MA function.
