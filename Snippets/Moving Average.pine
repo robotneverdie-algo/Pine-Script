@@ -296,7 +296,7 @@ moving_average(src, type, len) =>
                     donchian(len)
                 else
                     if type == "ecema"
-                        ecema(x, len, _ecema_limit)
+                        ecema(src, len, _ecema_limit)
                     else
                         if type == "ema"
                             ema(src, len)
