@@ -852,8 +852,9 @@ if _long
         _long_count := nz(_long_count[1]) + 1
     _short_count := 0
     _in_short := false
+    _in_exit := false
     if _long_count <= _trades_count
-        _when_long := time
+        _when_long := time_close
 
 if _short
     if _in_long or _in_exit
@@ -862,15 +863,16 @@ if _short
         _short_count := nz(_short_count[1]) + 1
     _long_count := 0
     _in_long := false
+    _in_exit := false
     if _short_count <= _trades_count
-        _when_short := time
+        _when_short := time_close
 
 if (_xlong and _in_long) or (_xshort and _in_short)
-    _when_exit := time
+    _when_exit := time_close
 
-_enter_long = _when_long == time and bar_window() and (_market_position == "Long" or _market_position == "Both")
-_enter_short = _when_short == time and bar_window() and (_market_position == "Short" or _market_position == "Both")
-_exit_trade = _when_exit == time
+_enter_long = _when_long == time_close and bar_window() and (_market_position == "Long" or _market_position == "Both")
+_enter_short = _when_short == time_close and bar_window() and (_market_position == "Short" or _market_position == "Both")
+_exit_trade = _when_exit == time_close
 
 var _entry_price = 0.0
 var _position_size = 0.0
@@ -892,7 +894,12 @@ if _enter_long or _in_long
         _tp1 := _tp1_upper
         _tp2 := _tp2_upper
         _tp3 := _tp3_upper
-    if _use_sl_tp
+        _hit_stop := na
+        _hit_tp1 := na
+        _hit_tp2 := na
+        _hit_tp3 := na
+
+    if _use_sl_tp and _in_long
         _hit_stop := crossunder(low, _stop) ? _stop : na
         _hit_tp1 := crossover(high, _tp1) ? _tp1 : na
         _hit_tp2 := crossover(high, _tp2) ? _tp2 : na
@@ -906,7 +913,12 @@ else
             _tp1 := _tp1_lower
             _tp2 := _tp2_lower
             _tp3 := _tp3_lower
-        if _use_sl_tp
+            _hit_stop := na
+            _hit_tp1 := na
+            _hit_tp2 := na
+            _hit_tp3 := na
+
+        if _use_sl_tp and _in_short
             _hit_stop := crossover(high, _stop) ? _stop : na
             _hit_tp1 := crossunder(low, _tp1) ? _tp1 : na
             _hit_tp2 := crossunder(low, _tp2) ? _tp2 : na
@@ -924,26 +936,32 @@ else
             _hit_tp3 := na
 
 if _use_sl_tp and (_in_long or _in_short)
-    // when tp1 is hit move stop to entry price.
-    if not na(_hit_tp1)
-        _stop := _entry_price
-        _tp1 := na
-    // when tp2 is hit move stop to tp1 price.
-    if not na(_hit_tp2)
-        _stop := valuewhen(na(_tp1), _hit_tp1[1], 0)
-        _tp2 := na
-    // when tp3 is hit and trailing is on use an trailing stop.
-    if _tp3_trailing and not na(_hit_tp3)
-        _stop := _in_long ? _stp_lower : _stp_upper
-        _tp3 := na
-    // if we havn't exit when tp3 was hit update the trailing stop.
-    _in_tp3 = _in_long ? valuewhen(not na(_hit_tp3), time, 0) > _when_long : valuewhen(not na(_hit_tp3), time, 0) > _when_short
-    if _tp3_trailing and _in_tp3
-        _stop := _in_long ? _stp_lower : _stp_upper
+    if not na(_hit_stop)
+        _when_exit := time_close
+    else
+        // when tp1 is hit move stop to entry price.
+        if not na(_hit_tp1)
+            _stop := _entry_price
+            _tp1 := na
+        else
+            // when tp2 is hit move stop to tp1 price.
+            if not na(_hit_tp2)
+                _stop := valuewhen(na(_tp1), _hit_tp1[1], 0)
+                _tp2 := na
+            else
+                // when tp3 is hit and trailing is on use an trailing stop.
+                if _tp3_trailing and not na(_hit_tp3)
+                    _stop := _in_long ? _stp_lower : _stp_upper
+                    _tp3 := na
+                else
+                    // if we havn't exit when tp3 was hit update the trailing stop.
+                    _in_tp3 = _in_long ? valuewhen(not na(_hit_tp3), time, 0) > _when_long : valuewhen(not na(_hit_tp3), time, 0) > _when_short
+                    if _tp3_trailing and _in_tp3
+                        _stop := _in_long ? _stp_lower : _stp_upper
 
 strategy.entry("Long", strategy.long, when=_enter_long)
 strategy.entry("Short", strategy.short, when=_enter_short)
-strategy.exit("TP1", "Long", limit=valuewhen(not na(_tp1), _tp1, 0), qty_percent=_tp1_percent, when= _in_long and _use_sl_tp)
+strategy.exit("TP1", "Long", limit=valuewhen(not na(_tp1), _tp1, 0), qty_percent=_tp1_percent, when=_in_long and _use_sl_tp)
 strategy.exit("TP2", "Long", limit=valuewhen(not na(_tp2), _tp2, 0), qty_percent=_tp2_percent, when=_in_long and _use_sl_tp)
 strategy.exit("TP1", "Short", limit=valuewhen(not na(_tp1), _tp1, 0), qty_percent=_tp1_percent, when=_in_short and _use_sl_tp)
 strategy.exit("TP2", "Short", limit=valuewhen(not na(_tp2), _tp2, 0), qty_percent=_tp2_percent, when=_in_short and _use_sl_tp)
@@ -951,7 +969,7 @@ strategy.close_all(when=_exit_trade or not na(_hit_stop) or (not _tp3_trailing a
 
 //{==================================================================================== Strategy Draw ======================================================================================}
 
-plot(_ma, linewidth=2, color=_ma < _source ? #1ca168 : #ce2020)
+plot(_ma, linewidth=2, color=_ma < _source ? #1ca168 : #ce2020, transp=0, title="MA")
 
 plotshape(_enter_long, style=shape.triangleup, location=location.bottom, color=#1ca168)
 plotshape(_enter_short, style=shape.triangleup, location=location.bottom, color=#ce2020)
@@ -963,10 +981,10 @@ plotchar(_use_sl_tp ? _hit_tp1 : na, textcolor=#ffff33, location=location.absolu
 plotchar(_use_sl_tp ? _hit_tp2 : na, textcolor=#ffff33, location=location.absolute, char='', text="TP2")
 plotchar(_use_sl_tp ? _hit_tp3 : na, textcolor=#ffff33, location=location.absolute, char='', text="TP3")
 
-plot(_use_sl_tp ? _stop : na, style=plot.style_circles, linewidth=2, color=#ce2020, transp=45, title="Stop")
-plot(_use_sl_tp ? _tp1 : na, style=plot.style_circles, linewidth=2, color=#1ca168, transp=45, title="Tp1")
-plot(_use_sl_tp ? _tp2 : na, style=plot.style_circles, linewidth=2, color=#1ca168, transp=45, title="Tp2")
-plot(_use_sl_tp ? _tp3 : na, style=plot.style_circles, linewidth=2, color=#1ca168, transp=45, title="Tp3")
+plot(_use_sl_tp ? _stop : na, style=plot.style_circles, linewidth=2, color=#ce2020, transp=0, title="Stop")
+plot(_use_sl_tp ? _tp1 : na, style=plot.style_circles, linewidth=2, color=#1ca168, transp=0, title="Tp1")
+plot(_use_sl_tp ? _tp2 : na, style=plot.style_circles, linewidth=2, color=#1ca168, transp=0, title="Tp2")
+plot(_use_sl_tp ? _tp3 : na, style=plot.style_circles, linewidth=2, color=#1ca168, transp=0, title="Tp3")
 
 // Draw an info panel for Stop-Loss, Profit-Taking and Position Sizing
 _panel_x = time + round(change(time) * 20)
@@ -975,10 +993,9 @@ _panel_color = _in_long ? #1ca168 : _in_short ? #ce2020 : #051c4d
 _text_color = #ffc100
 _price_format = min_tick_format()
 
-info_panel(_panel_x, _panel_y, _panel_color, _text_color, 22, "{=========== {\\/} ===========}")
-info_panel(_panel_x, _panel_y, _panel_color, _text_color, 20, "TP3: " + tostring(_tp3, _price_format))
-info_panel(_panel_x, _panel_y, _panel_color, _text_color, 18, "TP2: " + tostring(_tp2, _price_format))
-info_panel(_panel_x, _panel_y, _panel_color, _text_color, 16, "TP1: " + tostring(_tp1, _price_format))
+info_panel(_panel_x, _panel_y, _panel_color, _text_color, 20, "{=========== {\\/} ===========}")
+info_panel(_panel_x, _panel_y, _panel_color, _text_color, 18, "TP3: " + tostring(_tp3, _price_format))
+info_panel(_panel_x, _panel_y, _panel_color, _text_color, 16, "TP2: " + tostring(_tp2, _price_format))
 info_panel(_panel_x, _panel_y, _panel_color, _text_color, 14, "TP1: " + tostring(_tp1, _price_format))
 info_panel(_panel_x, _panel_y, _panel_color, _text_color, 12, "Stop: " + tostring(_stop, _price_format))
 info_panel(_panel_x, _panel_y, _panel_color, _text_color, 10, "Entry: " + tostring(_entry_price, _price_format))

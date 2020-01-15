@@ -51,6 +51,14 @@ A library of trading indicators, strategies and code snippets for Pine Script pr
 > [1] Strategy mainly use for backtesting setting for ProfitTrailer bot.  
 > [2] Use for turning on the bot.  
 
+* [PSAR Strategy](/Strategies/PSAR%20Strategy.pine)
+> An trend strategy using Parabolic SAR.
+> * Trend Following - A Moving Average.
+> * Trend Confirmation - Parabolic SAR
+> * Entry/Exit - None
+> * Stop-Loss and Profit-Taking - ATR
+> * Position Sizing - None
+
 ---
 ## Indicators
 ### Momentum Indicators

@@ -137,6 +137,23 @@ dema(x, len) =>
 donchian(len) =>
     avg(lowest(len), highest(len))
 
+// Error Corrected EMA http://www.mesasoftware.com/papers/ZeroLag.pdf
+ecema(x, len, limit) =>
+    a = 2 / (len + 1)
+    e = 0.0
+    e := a * x + (1 - a) * nz(e[1])
+    ec = 0.0
+    least_error = 1000000.0
+    best_gain = 0.0
+    for i = -limit to limit
+        gain = i / 10
+        ec := a * (e + gain * (x - ec[1])) + (1 - a) * nz(ec[1])
+        error = x - ec
+        if abs(error) < least_error
+            least_error := abs(error)
+            best_gain := gain
+    ec := a * (e + best_gain * (x - nz(ec[1]))) + (1 - a) * nz(ec[1])
+
 // Fractal Adaptive Moving Average http://www.mesasoftware.com/papers/FRAMA.pdf
 frama(x, len) =>
     half = int(len / 2)
@@ -289,22 +306,13 @@ vidya(x, len, ema_len) =>
     v := x * a * cmo + nz(v[1]) * (1 - a * cmo)
     v
 
-// Zero Lag Exponential Moving Average http://www.mesasoftware.com/papers/ZeroLag.pdf
-zlema(x, len, limit) =>
+// Zero Lag Exponential Moving Average https://www.fmlabs.com/reference/default.htm?url=ZeroLagExpMA.htm
+zlema(x, len) =>
     a = 2 / (len + 1)
+    lag = (len - 1) / 2
     e = 0.0
-    e := a * x + (1 - a) * nz(e[1])
-    ec = 0.0
-    least_error = 1000000.0
-    best_gain = 0.0
-    for i = -limit to limit
-        gain = i / 10
-        ec := a * (e + gain * (x - ec[1])) + (1 - a) * nz(ec[1])
-        error = x - ec
-        if abs(error) < least_error
-            least_error := abs(error)
-            best_gain := gain
-    ec := a * (e + best_gain * (x - nz(ec[1]))) + (1 - a) * nz(ec[1])
+    e := a * (2 * x - x[lag]) + (1 - a) * nz(e[1])
+    e
 
 //{============================================================================= Backtest Date Range Setting ===============================================================================}
 
@@ -339,11 +347,12 @@ _market_position = input("Both", options=["Both", "Long", "Short"], title="Marke
 //{=============================================================================== Trend Following Setting =================================================================================}
 
 _following_header = input(true, type=input.bool, title="{==================== Trend Following Setting ===================}")
-_ma_type = input("zlema", options=["alma", "cvwma", "dema", "donchian", "ema", "frama", "hull", "jma", "kama", "lsma", "mcginley", "modframa", "rma", "sma", "smma", "supersmoother", "tema", "vama", "vidya", "vwma", "wma", "zlema"], title="Moving Average Type")
-_ma_len = input(60, title="Moving Average Length")
+_ma_type = input("hull", options=["alma", "cvwma", "dema", "donchian", "ecema", "ema", "frama", "hull", "jma", "kama", "lsma", "mcginley", "modframa", "rma", "sma", "smma", "supersmoother", "tema", "vama", "vidya", "vwma", "wma", "zlema"], title="Moving Average: Type")
+_ma_len = input(60, title="Moving Average: Length")
 
 _alma_offset = input(0.8, step=0.01, minval=0.0, maxval=1.0, title="alma: offset")
 _alma_sigma = input(10, title="alma: sigma")
+_ecema_limit = input(50, title="ecema: gain limit")
 _jma_phase = input(50, title="jma: phase")
 _jma_power = input(2, title="jma: power")
 _kama_fast = input(2, title="kama: fast")
@@ -354,7 +363,6 @@ _modframa_fast = input(1, title="modframa: fast")
 _modframa_slow = input(198, title="modframa: slow")
 _vama_lookback = input(50, title="vama: fast")
 _vidya_len = input(30, title="vidya: ema length")
-_zlema_limit = input(50, title="zlema: gain limit")
 
 moving_average1(src, type, len) =>
     if type == "modframa"
@@ -387,7 +395,7 @@ moving_average1(src, type, len) =>
                                         if type == "wma"
                                             wma(src, len)
                                         else
-                                            zlema(src, len, _zlema_limit)
+                                            zlema(src, len)
 
 moving_average(src, type, len) =>
     if type == "alma"
@@ -402,36 +410,39 @@ moving_average(src, type, len) =>
                 if type == "donchian"
                     donchian(len)
                 else
-                    if type == "ema"
-                        ema(src, len)
+                    if type == "ecema"
+                        ecema(src, len, _ecema_limit)
                     else
-                        if type == "frama"
-                            frama(src, len)
+                        if type == "ema"
+                            ema(src, len)
                         else
-                            if type == "hull"
-                                hull(src, len)
+                            if type == "frama"
+                                frama(src, len)
                             else
-                                if type == "jma"
-                                    jma(src, len, _jma_phase, _jma_power)
+                                if type == "hull"
+                                    hull(src, len)
                                 else
-                                    if type == "kama"
-                                        kama(src, len, _kama_fast, _kama_slow)
+                                    if type == "jma"
+                                        jma(src, len, _jma_phase, _jma_power)
                                     else
-                                        if type == "lsma"
-                                            lsma(src, len, _lsma_offset)
+                                        if type == "kama"
+                                            kama(src, len, _kama_fast, _kama_slow)
                                         else
-                                            if type == "mcginley"
-                                                mcginley(src, len, _mcginley_factor)
+                                            if type == "lsma"
+                                                lsma(src, len, _lsma_offset)
                                             else
-                                                moving_average1(src, type, len)
+                                                if type == "mcginley"
+                                                    mcginley(src, len, _mcginley_factor)
+                                                else
+                                                    moving_average1(src, type, len)
 
 //{============================================================================== Trend Confirmation Setting ===============================================================================}
 
 _confirmation_header = input(true, type=input.bool, title="{================== Trend Confirmation Setting ==================}")
 // Waddah Attar Explosion https://www.tradingview.com/script/iu3kKWDI-Waddah-Attar-Explosion-LazyBear/
-_fast_len = input(30, title="MACD Line: Fast Length")
-_slow_len = input(60, title="MACD Line: Slow Length")
-_macd_mult = input(150, title="MACD Line: Multiplier")
+_fast_len = input(20, title="MACD Line: Fast Length")
+_slow_len = input(40, title="MACD Line: Slow Length")
+_macd_mult = input(140, title="MACD Line: Multiplier")
 _macd_lookback = input(1, minval=1, title="MACD Line: Lookback")
 _explosion_type = input("bollinger", options=["bollinger", "keltner", "atr"], title="Explosion: Bands Type")
 _explosion_len = input(30, title="Explosion: Length")
@@ -448,8 +459,8 @@ _fisher_len = input(10, title="Fisher: Length")
 
 _sl_tp_header = input(true, type=input.bool, title="{============== Stop-Loss and Profit-Taking Setting =============}")
 _use_sl_tp = input(true, type=input.bool, title="Use Stop-Loss and Profit-Taking")
-_bands_type = input("bollinger", options=["bollinger", "keltner", "atr", "donchian", "chandelier"], title="Bands Type")
-_bands_len = input(10, title="Bands Length")
+_bands_type = input("atr", options=["bollinger", "keltner", "atr", "donchian", "chandelier"], title="Bands Type")
+_bands_len = input(5, title="Bands Length")
 
 _stp_mult = input(1, minval=0.1, step=0.1, title="Stop-Loss Multiplier")
 _tp1_mult = input(1, minval=0.1, step=0.1, title="Take-Profit TP1 Multiplier")
@@ -507,8 +518,8 @@ _fisher_xshort = rising(_fisher, 1)
 _long = _ma_long and _wae_long
 _short = _ma_short and _wae_short
 
-_xlong = _ma_short and _wae_xlong or _fisher_xlong
-_xshort = _ma_long and _wae_xshort or _fisher_xshort
+_xlong = _wae_xlong and _fisher_xlong
+_xshort = _wae_xshort and _fisher_xshort
 
 var _long_count = 0
 var _short_count = 0
@@ -528,8 +539,9 @@ if _long
         _long_count := nz(_long_count[1]) + 1
     _short_count := 0
     _in_short := false
+    _in_exit := false
     if _long_count <= _trades_count
-        _when_long := time
+        _when_long := time_close
 
 if _short
     if _in_long or _in_exit
@@ -538,15 +550,16 @@ if _short
         _short_count := nz(_short_count[1]) + 1
     _long_count := 0
     _in_long := false
+    _in_exit := false
     if _short_count <= _trades_count
-        _when_short := time
+        _when_short := time_close
 
 if (_xlong and _in_long) or (_xshort and _in_short)
-    _when_exit := time
+    _when_exit := time_close
 
-_enter_long = _when_long == time and bar_window() and (_market_position == "Long" or _market_position == "Both")
-_enter_short = _when_short == time and bar_window() and (_market_position == "Short" or _market_position == "Both")
-_exit_trade = _when_exit == time
+_enter_long = _when_long == time_close and bar_window() and (_market_position == "Long" or _market_position == "Both")
+_enter_short = _when_short == time_close and bar_window() and (_market_position == "Short" or _market_position == "Both")
+_exit_trade = _when_exit == time_close
 
 var _entry_price = 0.0
 var _position_size = 0.0
@@ -568,7 +581,12 @@ if _enter_long or _in_long
         _tp1 := _tp1_upper
         _tp2 := _tp2_upper
         _tp3 := _tp3_upper
-    if _use_sl_tp
+        _hit_stop := na
+        _hit_tp1 := na
+        _hit_tp2 := na
+        _hit_tp3 := na
+
+    if _use_sl_tp and _in_long
         _hit_stop := crossunder(low, _stop) ? _stop : na
         _hit_tp1 := crossover(high, _tp1) ? _tp1 : na
         _hit_tp2 := crossover(high, _tp2) ? _tp2 : na
@@ -582,7 +600,12 @@ else
             _tp1 := _tp1_lower
             _tp2 := _tp2_lower
             _tp3 := _tp3_lower
-        if _use_sl_tp
+            _hit_stop := na
+            _hit_tp1 := na
+            _hit_tp2 := na
+            _hit_tp3 := na
+
+        if _use_sl_tp and _in_short
             _hit_stop := crossover(high, _stop) ? _stop : na
             _hit_tp1 := crossunder(low, _tp1) ? _tp1 : na
             _hit_tp2 := crossunder(low, _tp2) ? _tp2 : na
@@ -600,26 +623,32 @@ else
             _hit_tp3 := na
 
 if _use_sl_tp and (_in_long or _in_short)
-    // when tp1 is hit move stop to entry price.
-    if not na(_hit_tp1)
-        _stop := _entry_price
-        _tp1 := na
-    // when tp2 is hit move stop to tp1 price.
-    if not na(_hit_tp2)
-        _stop := valuewhen(na(_tp1), _hit_tp1[1], 0)
-        _tp2 := na
-    // when tp3 is hit and trailing is on use an trailing stop.
-    if _tp3_trailing and not na(_hit_tp3)
-        _stop := _in_long ? _stp_lower : _stp_upper
-        _tp3 := na
-    // if we havn't exit when tp3 was hit update the trailing stop.
-    _in_tp3 = _in_long ? valuewhen(not na(_hit_tp3), time, 0) > _when_long : valuewhen(not na(_hit_tp3), time, 0) > _when_short
-    if _tp3_trailing and _in_tp3
-        _stop := _in_long ? _stp_lower : _stp_upper
+    if not na(_hit_stop)
+        _when_exit := time_close
+    else
+        // when tp1 is hit move stop to entry price.
+        if not na(_hit_tp1)
+            _stop := _entry_price
+            _tp1 := na
+        else
+            // when tp2 is hit move stop to tp1 price.
+            if not na(_hit_tp2)
+                _stop := valuewhen(na(_tp1), _hit_tp1[1], 0)
+                _tp2 := na
+            else
+                // when tp3 is hit and trailing is on use an trailing stop.
+                if _tp3_trailing and not na(_hit_tp3)
+                    _stop := _in_long ? _stp_lower : _stp_upper
+                    _tp3 := na
+                else
+                    // if we havn't exit when tp3 was hit update the trailing stop.
+                    _in_tp3 = _in_long ? valuewhen(not na(_hit_tp3), time, 0) > _when_long : valuewhen(not na(_hit_tp3), time, 0) > _when_short
+                    if _tp3_trailing and _in_tp3
+                        _stop := _in_long ? _stp_lower : _stp_upper
 
 strategy.entry("Long", strategy.long, when=_enter_long)
 strategy.entry("Short", strategy.short, when=_enter_short)
-strategy.exit("TP1", "Long", limit=valuewhen(not na(_tp1), _tp1, 0), qty_percent=_tp1_percent, when= _in_long and _use_sl_tp)
+strategy.exit("TP1", "Long", limit=valuewhen(not na(_tp1), _tp1, 0), qty_percent=_tp1_percent, when=_in_long and _use_sl_tp)
 strategy.exit("TP2", "Long", limit=valuewhen(not na(_tp2), _tp2, 0), qty_percent=_tp2_percent, when=_in_long and _use_sl_tp)
 strategy.exit("TP1", "Short", limit=valuewhen(not na(_tp1), _tp1, 0), qty_percent=_tp1_percent, when=_in_short and _use_sl_tp)
 strategy.exit("TP2", "Short", limit=valuewhen(not na(_tp2), _tp2, 0), qty_percent=_tp2_percent, when=_in_short and _use_sl_tp)
@@ -627,7 +656,7 @@ strategy.close_all(when=_exit_trade or not na(_hit_stop) or (not _tp3_trailing a
 
 //{==================================================================================== Strategy Draw ======================================================================================}
 
-plot(_ma, linewidth=2, color=_ma < _source ? #1ca168 : #ce2020)
+plot(_ma, linewidth=2, color=_ma < _source ? #1ca168 : #ce2020, transp=0, title="MA")
 
 plotshape(_enter_long, style=shape.triangleup, location=location.bottom, color=#1ca168)
 plotshape(_enter_short, style=shape.triangleup, location=location.bottom, color=#ce2020)
@@ -639,10 +668,10 @@ plotchar(_use_sl_tp ? _hit_tp1 : na, textcolor=#ffff33, location=location.absolu
 plotchar(_use_sl_tp ? _hit_tp2 : na, textcolor=#ffff33, location=location.absolute, char='', text="TP2")
 plotchar(_use_sl_tp ? _hit_tp3 : na, textcolor=#ffff33, location=location.absolute, char='', text="TP3")
 
-plot(_use_sl_tp ? _stop : na, style=plot.style_circles, linewidth=2, color=#ce2020, transp=45, title="Stop")
-plot(_use_sl_tp ? _tp1 : na, style=plot.style_circles, linewidth=2, color=#1ca168, transp=45, title="Tp1")
-plot(_use_sl_tp ? _tp2 : na, style=plot.style_circles, linewidth=2, color=#1ca168, transp=45, title="Tp2")
-plot(_use_sl_tp ? _tp3 : na, style=plot.style_circles, linewidth=2, color=#1ca168, transp=45, title="Tp3")
+plot(_use_sl_tp ? _stop : na, style=plot.style_circles, linewidth=2, color=#ce2020, transp=0, title="Stop")
+plot(_use_sl_tp ? _tp1 : na, style=plot.style_circles, linewidth=2, color=#1ca168, transp=0, title="Tp1")
+plot(_use_sl_tp ? _tp2 : na, style=plot.style_circles, linewidth=2, color=#1ca168, transp=0, title="Tp2")
+plot(_use_sl_tp ? _tp3 : na, style=plot.style_circles, linewidth=2, color=#1ca168, transp=0, title="Tp3")
 
 // Draw an info panel for Stop-Loss, Profit-Taking and Position Sizing
 _panel_x = time + round(change(time) * 20)

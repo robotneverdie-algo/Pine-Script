@@ -224,10 +224,10 @@ plotchar(_hit_tp1, textcolor=#ffff33, location=location.absolute, char='', text=
 plotchar(_hit_tp2, textcolor=#ffff33, location=location.absolute, char='', text="TP2")
 plotchar(_hit_tp3, textcolor=#ffff33, location=location.absolute, char='', text="TP3")
 
-plot(_stop, style=plot.style_circles, linewidth=2, color=#ce2020, transp=45, title="Stop")
-plot(_tp1, style=plot.style_circles, linewidth=2, color=#1ca168, transp=45, title="Tp1")
-plot(_tp2, style=plot.style_circles, linewidth=2, color=#1ca168, transp=45, title="Tp2")
-plot(_tp3, style=plot.style_circles, linewidth=2, color=#1ca168, transp=45, title="Tp3")
+plot(_stop, style=plot.style_circles, linewidth=2, color=#ce2020, transp=0, title="Stop")
+plot(_tp1, style=plot.style_circles, linewidth=2, color=#1ca168, transp=0, title="Tp1")
+plot(_tp2, style=plot.style_circles, linewidth=2, color=#1ca168, transp=0, title="Tp2")
+plot(_tp3, style=plot.style_circles, linewidth=2, color=#1ca168, transp=0, title="Tp3")
 
 // Draw an info panel for Stop-Loss, Profit-Taking and Position Sizing
 _panel_x = time + round(change(time) * 20)
