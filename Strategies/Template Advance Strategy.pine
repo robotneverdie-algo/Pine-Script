@@ -330,10 +330,9 @@ _panel_color = _in_long ? #1ca168 : _in_short ? #ce2020 : #051c4d
 _text_color = #ffc100
 _price_format = min_tick_format()
 
-info_panel(_panel_x, _panel_y, _panel_color, _text_color, 22, "{=========== {\\/} ===========}")
-info_panel(_panel_x, _panel_y, _panel_color, _text_color, 20, "TP3: " + tostring(_tp3, _price_format))
-info_panel(_panel_x, _panel_y, _panel_color, _text_color, 18, "TP2: " + tostring(_tp2, _price_format))
-info_panel(_panel_x, _panel_y, _panel_color, _text_color, 16, "TP1: " + tostring(_tp1, _price_format))
+info_panel(_panel_x, _panel_y, _panel_color, _text_color, 20, "{=========== {\\/} ===========}")
+info_panel(_panel_x, _panel_y, _panel_color, _text_color, 18, "TP3: " + tostring(_tp3, _price_format))
+info_panel(_panel_x, _panel_y, _panel_color, _text_color, 16, "TP2: " + tostring(_tp2, _price_format))
 info_panel(_panel_x, _panel_y, _panel_color, _text_color, 14, "TP1: " + tostring(_tp1, _price_format))
 info_panel(_panel_x, _panel_y, _panel_color, _text_color, 12, "Stop: " + tostring(_stop, _price_format))
 info_panel(_panel_x, _panel_y, _panel_color, _text_color, 10, "Entry: " + tostring(_entry_price, _price_format))
