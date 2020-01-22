@@ -70,6 +70,10 @@ A library of trading indicators, strategies and code snippets for Pine Script pr
 > A rewrite of Godmode Oscillator https://www.tradingview.com/script/HL3vqXUM-Godmode-Oscillator-fresh-bread-generator-free-to-use/  
 > \@author LazyBear, xSilas, Ni6HTH4wK
 
+* [Trend Confirmation Index Indicator](/Indicators/Momentum%20Indicators/Trend%20Confirmation%20Index%20Indicator.pine)
+> A rewrite of Trend Confirmation Index http://www.fxcodebase.com/code/viewtopic.php?f=38&t=61051  
+> \@author Mario Jemic
+
 ### Trend Indicators
 ##### These technical indicators measure the direction and strength
 * [Moving Average Indicator](/Indicators/Trend%20Indicators/Moving%20Average%20Strategy.pine)
