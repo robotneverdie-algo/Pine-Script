@@ -16,6 +16,10 @@ A collection of trading indicators.
 > A rewrite of Trend Confirmation Index http://www.fxcodebase.com/code/viewtopic.php?f=38&t=61051  
 > \@author Mario Jemic
 
+* [WaveTrend Oscillator Indicator](/Indicators/Momentum%20Indicators/WaveTrend%20Oscillator%20Indicator.pine)
+> A rewrite of WaveTrend Oscillator. https://www.tradingview.com/script/2KE8wTuF-Indicator-WaveTrend-Oscillator-WT/  
+> \@author LazyBear
+
 ### Trend Indicators
 ##### These technical indicators measure the direction and strength
 * [Moving Average Indicator](/Indicators/Trend%20Indicators/Moving%20Average%20Strategy.pine)
