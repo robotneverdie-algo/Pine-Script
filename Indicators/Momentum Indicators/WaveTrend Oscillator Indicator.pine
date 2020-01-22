@@ -462,13 +462,13 @@ slow_moving_average(src, type, len) =>
 
 _source = _use_tf ? security(syminfo.tickerid, _tf, source(_src)) : source(_src)
 
-tci(x, type, len) =>
-    esa = fast_moving_average(x, type, len)
-    d = fast_moving_average(abs(x - esa), type, len)
-    (x - esa) / (0.015 * d)
+channel_index(x, type, len) =>
+    mean = fast_moving_average(x, type, len)
+    distance = fast_moving_average(abs(x - mean), type, len)
+    (x - mean) / (0.015 * distance)
 
-_tci = tci(_source, _fast_type, _channel_len)
-_fast_wt = fast_moving_average(_tci, _fast_type, _fast_len)
+_ci = channel_index(_source, _fast_type, _channel_len)
+_fast_wt = fast_moving_average(_ci, _fast_type, _fast_len)
 _slow_wt = slow_moving_average(_fast_wt, _slow_type, _slow_len)
 
 //{=================================================================================== Strategy Signal =====================================================================================}
