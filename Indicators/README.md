@@ -13,6 +13,7 @@ A collection of trading indicators.
 > \@author LazyBear, xSilas, Ni6HTH4wK
 
 * [Trend Confirmation Index Indicator](/Indicators/Momentum%20Indicators/Trend%20Confirmation%20Index%20Indicator.pine)
+> TCI indicator presumed if the position of an close within a candlestick provides information on whether the uptrend is gaining or losing power.  
 > A rewrite of Trend Confirmation Index http://www.fxcodebase.com/code/viewtopic.php?f=38&t=61051  
 > \@author Mario Jemic
 

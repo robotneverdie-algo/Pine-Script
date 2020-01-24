@@ -5,6 +5,7 @@
 study("Trend Confirmation Index Indicator", shorttitle="Trend Confirmation Index Indicator", overlay=false)
 
 // Description:
+// TCI indicator presumed if the position of an close within a candlestick provides information on whether the uptrend is gaining or losing power.
 // A rewrite of Trend Confirmation Index http://www.fxcodebase.com/code/viewtopic.php?f=38&t=61051
 // @author Mario Jemic
 //
@@ -267,11 +268,8 @@ _market_position = input("Both", options=["Both", "Long", "Short"], title="Marke
 //{=========================================================================== Trend Confirmation Index Setting ============================================================================}
 
 _ma_header = input(true, type=input.bool, title="{=============== Trend Confirmation Index Setting ===============}")
-_ma_type = input("supersmoother", options=["alma", "cvwma", "dema", "donchian", "ecema", "ema", "frama", "hull", "jma", "kama", "lsma", "mcginley", "modframa", "rma", "sma", "smma", "supersmoother", "tema", "vama", "vidya", "vwma", "wma", "zlema"], title="Type")
-_ma_len = input(10, title="Length")
-
-_oversold = input(30, "Oversold Level")
-_overbough = input(70, "Overbough Level")
+_ma_type = input("hull", options=["alma", "cvwma", "dema", "donchian", "ecema", "ema", "frama", "hull", "jma", "kama", "lsma", "mcginley", "modframa", "rma", "sma", "smma", "supersmoother", "tema", "vama", "vidya", "vwma", "wma", "zlema"], title="Type")
+_ma_len = input(60, title="Length")
 
 _alma_offset = input(0.8, step=0.01, minval=0.0, maxval=1.0, title="alma: offset")
 _alma_sigma = input(10, title="alma: sigma")
@@ -358,14 +356,14 @@ moving_average(src, type, len) =>
                                                     mcginley(src, len, _mcginley_factor)
                                                 else
                                                     moving_average1(src, type, len)
-candle_info() =>
+tci_actual() =>
     (close - low) / ((high - low) / 100)
 
 
 //{==================================================================================== Strategy Logic =====================================================================================}
 
-_source = _use_tf ? security(syminfo.tickerid, _tf, candle_info()) : candle_info()
-_tci = moving_average(_source, _ma_type, _ma_len)
+_source = _use_tf ? security(syminfo.tickerid, _tf, tci_actual()) : tci_actual()
+_tci_average = moving_average(_source, _ma_type, _ma_len)
 
 //{=================================================================================== Strategy Signal =====================================================================================}
 
@@ -415,14 +413,8 @@ _exit_trade = _when_exit == time
 
 //{==================================================================================== Strategy Draw ======================================================================================}
 
-_upper = hline(_overbough, color=#f19cbb, title="Overbough")
-fill(_upper, hline(100, color=#f19cbb), color=#f19cbb, transp=85)
-
-_lower = hline(_oversold, color=#e0b0ff, title="Oversold")
-fill(_lower, hline(0, color=#e0b0ff), color=#e0b0ff, transp=85)
-
-hline(50, linestyle=hline.style_dashed, color=#ffd700, title="50")
-plot(_tci, linewidth=2, color=#58c4f1, transp=0, title="TCI")
+hline(50, linestyle=hline.style_dashed, color=#ffd700, title="50 Line")
+plot(_tci_average, linewidth=2, color=rising(_tci_average, 1) ? #ebff00 : #aaaaaa, transp=0, title="TCI Average")
 
 plotshape(_enter_long, style=shape.triangleup, location=location.bottom, color=#1ca168)
 plotshape(_enter_short, style=shape.triangleup, location=location.bottom, color=#ce2020)
