@@ -97,6 +97,11 @@ A library of trading indicators, strategies and code snippets for Pine Script pr
 
 ### Volume Indicators
 ##### These technical indicators measure the strength of a trend based on volume
+
+### Experimental Indicators
+##### These technical indicators are experimental, usually combination of indicators.
+* [IFish TCI Indicator](/Indicators/Experimental%20Indicators/IFish%20TCI%20Indicator.pine)
+> An inverse fisher transformation of TCI indicator http://www.fxcodebase.com/code/viewtopic.php?f=38&t=61051
 ---
 ## Snippets
 * [Moving Average](/Snippets/Moving%20Average.pine)
