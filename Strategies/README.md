@@ -57,3 +57,11 @@ A collection of trading strategies.
 > * Entry/Exit - None
 > * Stop-Loss and Profit-Taking - ATR
 > * Position Sizing - None
+
+* [PSAR WT Strategy](/Strategies/PSAR%20WT%20Strategy.pine)
+> An trend strategy using Parabolic SAR and WaveTrend Oscillator.
+> * Trend Following - Parabolic SAR.
+> * Trend Confirmation - WaveTrend Oscillator.
+> * Entry/Exit - IFish TCI Indicator
+> * Stop-Loss and Profit-Taking - None
+> * Position Sizing - None
