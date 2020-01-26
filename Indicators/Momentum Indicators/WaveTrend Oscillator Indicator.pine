@@ -268,20 +268,20 @@ _market_position = input("Both", options=["Both", "Long", "Short"], title="Marke
 
 _wt_header = input(true, type=input.bool, title="{====================== WaveTrend Setting =======================}")
 
-_channel_len = input(10, "Channel Length")
-_oversold = input(-53, "Oversold Level")
-_overbough = input(53, "Overbough Level")
+_channel_len = input(9, "Channel Length")
+_overbough = input(45, "Overbough Level")
+_oversold = input(-45, "Oversold Level")
 
 //{==================================================================================== Fast MA Setting ====================================================================================}
 
 _fast_header = input(true, type=input.bool, title="{======================= Fast MA Setting ========================}")
 
-_fast_type = input("ema", options=["alma", "cvwma", "dema", "donchian", "ecema", "ema", "frama", "hull", "jma", "kama", "lsma", "mcginley", "modframa", "rma", "sma", "smma", "supersmoother", "tema", "vama", "vidya", "vwma", "wma", "zlema"], title="Type")
+_fast_type = input("ecema", options=["alma", "cvwma", "dema", "donchian", "ecema", "ema", "frama", "hull", "jma", "kama", "lsma", "mcginley", "modframa", "rma", "sma", "smma", "supersmoother", "tema", "vama", "vidya", "vwma", "wma", "zlema"], title="Type")
 _fast_len = input(21, title="Length")
 
 _fast_alma_offset = input(0.8, step=0.01, minval=0.0, maxval=1.0, title="alma: offset")
 _fast_alma_sigma = input(10, title="alma: sigma")
-_fast_ecema_limit = input(50, title="ecema: gain limit")
+_fast_ecema_limit = input(12, title="ecema: gain limit")
 _fast_jma_phase = input(50, title="jma: phase")
 _fast_jma_power = input(2, title="jma: power")
 _fast_kama_fast = input(2, title="kama: fast")
@@ -369,7 +369,7 @@ fast_moving_average(src, type, len) =>
 
 _slow_header = input(true, type=input.bool, title="{======================= Slow MA Setting ========================}")
 
-_slow_type = input("sma", options=["alma", "cvwma", "dema", "donchian", "ecema", "ema", "frama", "hull", "jma", "kama", "lsma", "mcginley", "modframa", "rma", "sma", "smma", "supersmoother", "tema", "vama", "vidya", "vwma", "wma", "zlema"], title="Type")
+_slow_type = input("tema", options=["alma", "cvwma", "dema", "donchian", "ecema", "ema", "frama", "hull", "jma", "kama", "lsma", "mcginley", "modframa", "rma", "sma", "smma", "supersmoother", "tema", "vama", "vidya", "vwma", "wma", "zlema"], title="Type")
 _slow_len = input(4, title="Length")
 
 _slow_alma_offset = input(0.8, step=0.01, minval=0.0, maxval=1.0, title="alma: offset")
@@ -471,6 +471,15 @@ _ci = channel_index(_source, _fast_type, _channel_len)
 _fast_wt = fast_moving_average(_ci, _fast_type, _fast_len)
 _slow_wt = slow_moving_average(_fast_wt, _slow_type, _slow_len)
 
+top_bottom(x, overbough, oversold) =>
+    top = false
+    top := x[2] > avg(x[4], x[3]) and x[2] > avg(x, x[1]) and x[2] > overbough and not top[1]
+    bottom = false
+    bottom := x[2] < avg(x[4], x[3]) and x[2] < avg(x, x[1]) and x[2] < oversold and not bottom[1]
+    [top, bottom]
+
+[_wt_top, _wt_bottom] = top_bottom(_fast_wt, _overbough, _oversold)
+
 //{=================================================================================== Strategy Signal =====================================================================================}
 
 _long = false
@@ -531,7 +540,6 @@ plot(_fast_wt, linewidth=2, color=_fast_wt > _slow_wt ? #63ff00 : #ff2700)
 plot(_slow_wt, linewidth=2, style=plot.style_circles, color=#f9bf34)
 plot(_fast_wt-_slow_wt, color=#3bd1d9, style=plot.style_area, transp=65)
 
-plotshape(_enter_long, style=shape.triangleup, location=location.bottom, color=#1ca168)
-plotshape(_enter_short, style=shape.triangleup, location=location.bottom, color=#ce2020)
-plotshape(_exit_trade, style=shape.triangledown, location=location.bottom, color=#ffc100)
-barcolor(_enter_long ? #1ca168 : _enter_short ? #ce2020 : _exit_trade ? #ffc100 : na)
+plotshape(_wt_top ? _fast_wt : na, style=shape.circle, location=location.absolute, size=size.normal, color=#ff2700)
+plotshape(_wt_bottom ? _fast_wt : na, style=shape.circle, location=location.absolute, size=size.normal, color=#63ff00)
+barcolor(_fast_wt > _slow_wt ? #63ff00 : #ff2700)
