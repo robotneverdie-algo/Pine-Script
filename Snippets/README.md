@@ -4,7 +4,7 @@ A collection of code snippets for Pine Script programming language.
 
 ---
 * [Moving Average](/Snippets/Moving%20Average.pine)
-> An collection of moving averages used in the code base. [1]
+> ###### An collection of moving averages used in the code base. [1]
 > * alma - Arnaud Legoux Moving Average
 > * cvwma - Coefficient of Variation Weighted Moving Average https://www.tradingview.com/script/0dBtJvhu-Stratus-DW/
 > * dema - Double Exponential Moving Average
@@ -29,11 +29,11 @@ A collection of code snippets for Pine Script programming language.
 > * wma - Weighted Moving Average
 > * zlema - Zero Lag Exponential Moving Average https://www.fmlabs.com/reference/default.htm?url=ZeroLagExpMA.htm
 >
-> References/Notes:  
+> ###### References/Notes:  
 > [1] TradingView will slow down when their is a long chain of if/else statement, so have to split MA function.
 
 * [Channel Bands](/Snippets/Channel%20Bands.pine)
-> An collection of channel bands used in the code base.
+> ###### An collection of channel bands used in the code base.
 > * bollinger - Bollinger Bands
 > * keltner - Keltner Channels
 > * atr - Average True Range
@@ -41,8 +41,7 @@ A collection of code snippets for Pine Script programming language.
 > * chandelier - Chandelier Exit
 
 * [Momentum](/Snippets/Momentum.pine)
-> Description:
-> An collection of momentum indicator used in the code base.
+> ###### An collection of momentum indicator used in the code base.
 > * adx - Average Directional Movement Index
 > * adxr - Average Directional Movement Index Rating
 > * apo - Absolute Price Oscillator
@@ -63,9 +62,9 @@ A collection of code snippets for Pine Script programming language.
 > * ultosc - Ultimate Oscillator
 > * willr - Williams %R
 >
-> References/Notes:  
+> ###### References/Notes:  
 > [1] Use PercentRank instead of ROC describe in ConnorsRSI Guidebook.  
 > [2] Return K not %K: %K = sma(K, pk_len) %D = sma(%K, pd_len)
 
 * [Ticker](/Snippets/Ticker.pine)
->  Find if current ticker has quote currency.
+>  ###### Find if current ticker has quote currency.

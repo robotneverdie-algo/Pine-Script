@@ -12,6 +12,13 @@ strategy("Counter-Trend Strategy", shorttitle="Counter-Trend Strategy", overlay=
 // * Stop-Loss and Profit-Taking - None
 // * Position Sizing - None
 //
+// Color Schemes:
+// * Top: IFish TCI - Shape (diamond) / Rising (yellow) / Falling (purple)
+// * Line: WaveTrend Oscillator - Shape (line) / Rising (green) / Falling (red)
+// * Zero Line: Percentage Difference - Shape (label up/down) / Rising (green) / Falling (red)
+// * Bottom: Sigma Accumulate - Shape (square) / Rising (blue) / Falling (grey)
+// * Long/Short: WaveTrend Oscillator - Shape (circle) / Long (green) / Short (red)
+//
 // References/Notes:
 // [1] IFish TCI has static moving average (zlema) due to error: Script has too many local scopes.
 //
@@ -775,10 +782,10 @@ strategy.close_all(when=_exit_trade)
 
 //{==================================================================================== Strategy Draw ======================================================================================}
 
-plotshape(true, style=shape.diamond, location=location.top, color=rising(_ifish, 1) ? #eef3d8 : #789e9e, title="IFish TCI")
-plotshape(rising(_diff, 1) ? 0.0 : na, style=shape.triangleup, location=location.absolute, color=#63ff00, title="Percentage Difference: Up")
-plotshape(falling(_diff, 1) ? 0.0 : na, style=shape.triangledown, location=location.absolute, color=#ff2700, title="Percentage Difference: Down")
-plot(_wt, linewidth=2, color=rising(_wt, 1) ? #63ff00 : #ff2700, title="WaveTrend")
+plotshape(true, style=shape.diamond, location=location.top, color=rising(_ifish, 1) ? #dedb00 : #501a8e, title="IFish TCI")
+plot(_wt, style=plot.style_line, linewidth=2, color=rising(_wt, 1) ? #63ff00 : #ff2700, title="WaveTrend")
+plotshape(rising(_diff, 1) ? 0.0 : na, style=shape.labelup, location=location.absolute, color=#63ff00, title="Percentage Difference: Up")
+plotshape(falling(_diff, 1) ? 0.0 : na, style=shape.labeldown, location=location.absolute, color=#ff2700, title="Percentage Difference: Down")
 plotshape(true, style=shape.square, location=location.bottom, color=_sa > _slow ? #407db8 : #7b8280, title="Sigma Accumulate")
 
 plotshape(_enter_long ? _wt : na, style=shape.circle, location=location.absolute, size=size.normal, color=#1ca168)
