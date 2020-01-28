@@ -65,3 +65,14 @@ A collection of trading strategies.
 > * Entry/Exit - IFish TCI Indicator
 > * Stop-Loss and Profit-Taking - None
 > * Position Sizing - None
+
+* [Counter-Trend Strategy](/Strategies/Counter%20Trend%20Strategy.pine)
+> An counter-trend strategy finding tops/bottoms.  
+> * Trend Following - Percentage Difference of Moving Average and Source, IFish TCI. [1]
+> * Trend Confirmation - WaveTrend Oscillator
+> * Entry/Exit - Sigma Accumulate
+> * Stop-Loss and Profit-Taking - None
+> * Position Sizing - None  
+>
+> References/Notes:  
+> [1] IFish TCI has static moving average (zlema) due to error: Script has too many local scopes.
