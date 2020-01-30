@@ -50,3 +50,6 @@ A collection of trading indicators.
 ##### These technical indicators are experimental, usually combination of indicators.
 * [IFish TCI Indicator](/Indicators/Experimental%20Indicators/IFish%20TCI%20Indicator.pine)
 > ###### An inverse fisher transformation of TCI indicator http://www.fxcodebase.com/code/viewtopic.php?f=38&t=61051
+
+* [Long/Short Ratio Levels Indicator](/Indicators/Experimental%20Indicators/Long%20Short%20Ratio%20Levels%20Indicator.pine)
+> ###### Support/resistance levels based on spike in BTC long/short ratio, assuming green/red candles increase/decrease the long ratio, also dramatic increase/decrease in long ratio provide support/resistance levels.
