@@ -23,7 +23,7 @@ A collection of trading indicators.
 
 ### Trend Indicators
 ##### These technical indicators measure the direction and strength
-* [Moving Average Indicator](/Indicators/Trend%20Indicators/Moving%20Average%20Strategy.pine)
+* [Moving Average Indicator](/Indicators/Trend%20Indicators/Moving%20Average%20Indicator.pine)
 > ###### Moving average cross strategies with three type:
 > Price Cross - When price cross the slow ma
 > Two Cross - When fast ma cross the slow ma
@@ -31,6 +31,10 @@ A collection of trading indicators.
 
 * [Waddah Attar Explosion Indicator](/Indicators/Trend%20Indicators/Waddah%20Attar%20Explosion%20Strategy.pine)
 > ###### Waddah Attar Explosion with custom moving averages and exit strategies
+
+* [MACD Line with Channel Bands Indicator](/Indicators/Trend%20Indicators/MACD%20Line%20with%20Channel%20Bands%20Indicator.pine)
+> ###### A rewrite of Bollinger Bands on Macd https://www.tradingview.com/script/SG9NNwvz-Bollinger-Bands-on-Macd/
+> © Dreadblitz
 
 ### Volatility Indicators
 ##### These technical indicators measure the rate of price movement
