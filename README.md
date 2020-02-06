@@ -135,6 +135,15 @@ A library of trading indicators, strategies and code snippets for Pine Script pr
 * [Long/Short Ratio Levels Indicator](/Indicators/Experimental%20Indicators/Long%20Short%20Ratio%20Levels%20Indicator.pine)
 > ###### Support/resistance levels based on spike in BTC long/short ratio, assuming green/red candles increase/decrease the long ratio, also dramatic increase/decrease in long ratio provide support/resistance levels.
 
+* [Momentum Levels Indicator](/Indicators/Experimental%20Indicators/Momentum%20Levels%20Indicator.pine)
+> ######  Support/Resistance levels with momentum indicators and channel bands.
+> Momentum out of channel bands, price is trending and if momentum in channel bands possible pause or reversal of the current trend.
+> These pause or reversal act as support/resistance levels.
+>  
+> ###### Color Schemes:
+>  * Line: Trend Pause - Shape (circle) / Support (green) / Resistance (red)
+>  * Line: Trend Reversal - Shape (circle) / Support/Resistance (yellow)
+
 ---
 ## Snippets
 * [Moving Average](/Snippets/Moving%20Average.pine)

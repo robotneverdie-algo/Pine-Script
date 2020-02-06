@@ -1,0 +1,427 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © RobotNeverDie
+
+//@version=4
+study("Momentum Levels Indicator", shorttitle="Momentum Levels Indicator", overlay=true)
+
+// Description:
+// Support/Resistance levels with momentum indicators and channel bands.
+// Momentum out of channel bands, price is trending and if momentum in channel bands possible pause or reversal of the current trend.
+// These pause or reversal act as support/resistance levels.
+//
+// Color Schemes:
+// * Line: Trend Pause - Shape (circle) / Support (green) / Resistance (red)
+// * Line: Trend Reversal - Shape (circle) / Support/Resistance (yellow)
+//
+// More at https://github.com/robotneverdie-algo/Pine-Script
+
+//{=================================================================================== Misc. Functions =====================================================================================}
+
+source(x) =>
+    if x == "open"
+        open
+    else
+        if x == "high"
+            high
+        else
+            if x == "low"
+                low
+            else
+                if x == "close"
+                    close
+                else
+                    if x == "hl2"
+                        hl2
+                    else
+                        if x == "hlc3"
+                            hlc3
+                        else
+                            if x == "ohlc4"
+                                ohlc4
+                            else
+                                vwap
+
+//{================================================================================== Momentum Functions ===================================================================================}
+
+// Average Directional Movement Index
+adx(len) =>
+	up = change(high)
+	down = -1 * change(low)
+	plus_dm = up > down and up > 0 ? up : 0
+	minus_dm = down > up and down > 0 ? down : 0
+	plus_di = rma(plus_dm, len) / atr(len) * 100
+	minus_di = rma(minus_dm, len) / atr(len) * 100
+	dx = abs(plus_di - minus_di) / abs(plus_di + minus_di) * 100
+	adx = rma(dx, len) * 100
+	[plus_di, minus_di, dx, adx]
+
+// Absolute Price Oscillator
+apo(x, fast_len, slow_len) =>
+    ema(x, fast_len) - ema(x, slow_len)
+
+// Aroon Oscillator
+aroonosc(len) =>
+    up = (len - highestbars(len)) / len * 100
+    down = (len - lowestbars(len)) / len * 100
+    up - down
+
+// Accumulative Swing Index https://library.tradingtechnologies.com/trade/chrt-ti-accumulative-swing-index.html
+asi(x, limit) =>
+    _tr = max(high - x[1], x[1] - low, high - low)
+    er = iff(x[1] > high, high - x[1], iff(x[1] < low, x[1] - low, 0.0))
+    sh = x[1] - open[1]
+    r = _tr - 0.5 * er + 0.25 * sh
+
+    w = (x - x[1] + 0.5 * (x - open) + 0.25 * (x[1] - open[1])) / r
+    k = max(high - x[1], x[1] - low)
+    si = 0.0
+    si := 50.0 * w * (k / limit)
+    cum(si)
+
+// Balance Of Power
+bop(len) =>
+    sma((close - open) / (high - low), len)
+
+// Commodity Channel Index
+cci_(x, len, constant) =>
+    (x - sma(x, len)) / (constant * dev(x, len))
+
+// Chande Momentum Oscillator
+_cmo(x, len) =>
+    diff = change(x)
+    up = sum(max(diff, 0), len)
+    down = sum(abs(min(diff, 0)), len)
+    (up - down) / (up + down) * 100
+
+// Intraday Momentum Index
+imi(x, len) =>
+    up = iff(x > open, x - open, 0.0)
+    down = iff(x < open, open - x, 0.0)
+    gains = sum(up, len)
+    losses = sum(down, len)
+    gains / (gains + losses) * 100
+
+// Money Flow Index
+_mfi(x, len) =>
+    flow = x * volume
+    diff = change(x)
+    up = diff > 0 ? flow : 0.0
+    down  = diff < 0 ? flow : 0.0
+    ratio = sum(up, len) / sum(down, len)
+    100 - 100 / (1 + ratio)
+
+// Percentage Price Oscillator
+ppo(x, fast_len, slow_len) =>
+    (ema(x, fast_len) - ema(x, slow_len)) / ema(x, slow_len) * 100
+
+// Relative Strength Index
+rsi_(x, len) =>
+    up = max(x - x[1], 0)
+    down = max(x[1] - x, 0)
+    ratio = rma(up, len) / rma(down, len)
+    100 - 100 / (1 + ratio)
+
+// Connors RSI https://www.tradingmarkets.com/media/2012/ConnorsRSI-Pullbacks-Guidebook.pdf
+crsi(x, rsi_len, streak_len, rank_len) =>
+    streak = 0.0
+    diff = sign(change(x))
+    streak := diff == 0 ? 0.0 : (diff == 1 ? max(1, nz(streak[1]) + 1) : min(-1, nz(streak[1]) - 1))
+    avg(rsi_(x, rsi_len), rsi_(streak, streak_len), percentrank(x, rank_len))
+
+// Stochastic K https://www.freestockcharts.com/help/Content/Indicators/Stochastics.htm
+stoch_(x, len) =>
+    (x - lowest(x, len)) / (highest(len) - lowest(len)) * 100
+
+// Ultimate Oscillator
+ultosc(x, len1, len2, len3) =>
+    bp = x - min(low, x[1])
+    tr_ = max(high, x[1]) - min(low, x[1])
+    avg1 = sum(bp, len1) / sum(tr_, len1)
+    avg2 = sum(bp, len2) / sum(tr_, len2)
+    avg3 = sum(bp, len3) / sum(tr_, len3)
+    (4 * avg1 + 2 * avg2 + avg3) / 7 * 100
+
+// Williams %R
+willr(x, len) =>
+    (highest(len) - x) / (highest(len) - lowest(len)) * -100
+
+//{==================================================================================== Channel Bands ======================================================================================}
+
+bands(x, type, len, mult) =>
+    if type == "bollinger"
+        // Bollinger Bands
+        basis = sma(x, len)
+        volatility = stdev(x, len)
+        [basis + (volatility * mult), basis - (volatility * mult)]
+    else
+        if type == "keltner"
+            // Keltner Channels
+            basis = ema(x, len)
+            volatility = atr(len)
+            [basis + (volatility * mult), basis - (volatility * mult)]
+        else
+            if type == "atr"
+                // Average True Range
+                basis = x
+                volatility = atr(len)
+                [basis + (volatility * mult), basis - (volatility * mult)]
+            else
+                if type == "donchian"
+                    // Donchian Channel
+                    upper = highest(len)
+                    lower = lowest(len)
+                    basis = avg(upper, lower)
+                    volatility = upper - lower
+                    [basis + (volatility * mult), basis - (volatility * mult)]
+                else
+                    // Chandelier Exit
+                    upper = highest(len)
+                    lower = lowest(len)
+                    volatility = atr(len)
+                    [upper - (volatility * mult) , lower + (volatility * mult)]
+
+//{============================================================================= Backtest Date Range Setting ===============================================================================}
+
+_backtest_header = input(true, type=input.bool, title="{================== Backtest Date Range Setting =================}")
+_use_date_range = input(true, type=input.bool, title="Use Date Range")
+_start_day = input(1, minval=1, maxval=31, title="Start Date")
+_start_month = input(1, minval=1, maxval=12, title="Start Month")
+_start_year = input(1950, minval=2011, title="Start Year")
+_end_day = input(1, minval=1, maxval=31, title="End Date")
+_end_month = input(1, minval=1, maxval=12, title="End Month")
+_end_year = input(2050, minval=2019, title="End Year")
+
+_start = timestamp(_start_year, _start_month, _start_day, 0, 0)
+_end = timestamp(_end_year, _end_month, _end_day, 0, 0)
+
+// Bar window Function
+bar_window() =>
+    if _use_date_range
+        time >= _start and time <= _end
+    else
+        true
+
+//{=================================================================================== Strategy Setting =====================================================================================}
+
+_strategy_header = input(true, type=input.bool, title="{====================== Strategy Settings =======================}")
+_trades_count = input(1, minval=1, title="Trades Count")
+_src = input("close", options=["open", "high", "low", "close", "hl2", "hlc3", "ohlc4", "vwap"], title="Source")
+_use_tf = input(false, type=input.bool, title="Use Different Timeframe")
+_tf = input("240", type=input.resolution, title="Timeframe")
+_market_position = input("Both", options=["Both", "Long", "Short"], title="Market Position")
+
+//{================================================================================ Channel Bands Settings =================================================================================}
+
+_bands_header = input(true, type=input.bool, title="{==================== Channel Bands Settings ====================}")
+_bands_type = input("bollinger", options=["bollinger", "keltner", "atr", "donchian", "chandelier"], title="Type")
+_bands_len = input(10, title="Length")
+_bands_multi = input(1, step=0.1, title="Multiplier")
+
+//{=================================================================================== Momentum Settings ===================================================================================}
+
+_mom_header = input(true, type=input.bool, title="{====================== Momentum Settings =======================}")
+_mom_type = input("cci", options=["adx", "adxr", "apo", "aroonosc", "asi", "bop", "cci", "cmo", "crsi", "dx", "imi", "mfi", "ppo", "roc", "rsi", "stoch", "stochrsi", "ultosc", "willr"], title="Type")
+
+_adx_len = input(14, minval=2, type=input.integer, title="adx: length")
+_adxr_len = input(14, minval=2, type=input.integer, title="adxr: length")
+_adxr_interval = input(14, minval=2, type=input.integer, title="adxr: interval")
+_apo_fast_len = input(10, minval=2, type=input.integer, title="apo: fast length")
+_apo_slow_len = input(20, minval=2, type=input.integer, title="apo: slow length")
+_aroonosc_len = input(14, minval=2, type=input.integer, title="aroonosc: length")
+_asi_limit = input(10000, minval=2, type=input.integer, title="asi: maximum bar limit")
+_bop_len = input(1, minval=2, type=input.integer, title="bop: length")
+_cci_len = input(20, minval=2, type=input.integer, title="cci: length")
+_cci_constant = input(0.015, step=0.001, type=input.float, title="cci: constant")
+_cmo_len = input(9, minval=2, type=input.integer, title="cmo: length")
+_crsi_rsi_len = input(3, minval=2, type=input.integer, title="crsi: rsi length")
+_crsi_updown_len = input(2, minval=2, type=input.integer, title="crsi: up/down length")
+_crsi_roc_len = input(100, minval=2, type=input.integer, title="crsi: roc length")
+_dx_len = input(14, minval=2, type=input.integer, title="dx: length")
+_imi_len = input(14, minval=2, type=input.integer, title="imi: length")
+_mfi_len = input(20, minval=2, type=input.integer, title="mfi: length")
+_ppo_fast_len = input(12, minval=2, type=input.integer, title="ppo: fast length")
+_ppo_slow_len = input(26, minval=2, type=input.integer, title="ppo: slow length")
+_roc_len = input(14, minval=2, type=input.integer, title="roc: length")
+_rsi_len = input(14, minval=2, type=input.integer, title="rsi: length")
+_stoch_len = input(14, minval=2, type=input.integer, title="stoch: length")
+_stochrsi_rsi_len = input(14, minval=2, type=input.integer, title="stochrsi: rsi length")
+_stochrsi_stoch_len = input(14, minval=2, type=input.integer, title="stochrsi: stoch length")
+_ultosc_len1 = input(7, minval=2, type=input.integer, title="ultosc: length1")
+_ultosc_len2 = input(14, minval=2, type=input.integer, title="ultosc: length2")
+_ultosc_len3 = input(28, minval=2, type=input.integer, title="ultosc: length3")
+_willr_len = input(14, minval=2, type=input.integer, title="willr: length")
+
+momentum(src, type) =>
+    if type == "adx"
+        [plus_di, minus_di, dx, adx] = adx(_adx_len)
+        adx
+    else
+        if type == "adxr"
+            [plus_di, minus_di, dx, adx] = adx(_adxr_len)
+            (adx + adx[_adxr_interval]) / 2
+        else
+            if type == "apo"
+                apo(src, _apo_fast_len, _apo_slow_len)
+            else
+                if type == "aroonosc"
+                    aroonosc(_aroonosc_len)
+                else
+                    if type == "asi"
+                        asi(src, _asi_limit)
+                    else
+                        if type == "bop"
+                            bop(_bop_len)
+                        else
+                            if type == "cci"
+                                cci_(src, _cci_len, _cci_constant)
+                            else
+                                if type == "cmo"
+                                    _cmo(src, _cmo_len)
+                                else
+                                    if type == "crsi"
+                                        crsi(src, _crsi_rsi_len, _crsi_updown_len, _crsi_roc_len)
+                                    else
+                                        if type == "dx"
+                                            [plus_di, minus_di, dx, adx] = adx(_dx_len)
+                                            dx
+                                        else
+                                            if type == "imi"
+                                                imi(src, _imi_len)
+                                            else
+                                                if type == "mfi"
+                                                    _mfi(src, _mfi_len)
+                                                else
+                                                    if type == "ppo"
+                                                        ppo(src, _ppo_fast_len, _ppo_slow_len)
+                                                    else
+                                                        if type == "roc"
+                                                            roc(src, _roc_len)
+                                                        else
+                                                            if type == "rsi"
+                                                                rsi_(src, _rsi_len)
+                                                            else
+                                                                if type == "stoch"
+                                                                    stoch_(src, _stoch_len)
+                                                                else
+                                                                    if type == "stochrsi"
+                                                                        stoch_(rsi_(src, _stochrsi_rsi_len), _stochrsi_stoch_len)
+                                                                    else
+                                                                        if type == "ultosc"
+                                                                            ultosc(src, _ultosc_len1, _ultosc_len2, _ultosc_len3)
+                                                                        else
+                                                                            willr(src, _willr_len)
+
+//{==================================================================================== Strategy Logic =====================================================================================}
+
+_source = _use_tf ? security(syminfo.tickerid, _tf, source(_src)) : source(_src)
+
+_mom = momentum(_source, _mom_type)
+[_upper_band, _lower_band] = bands(_mom, _bands_type, _bands_len, _bands_multi)
+
+_long_pause = crossunder(_mom, _upper_band)
+_short_pause = crossover(_mom, _lower_band)
+
+_long_reversal = _long_pause and crossunder(_mom, _lower_band)
+_short_reversal = _short_pause and crossover(_mom, _upper_band)
+
+float _support_pause = na
+float _resistance_pause = na
+float _support_reversal = na
+float _resistance_reversal = na
+
+_support_pause := if _short_pause and not _short_reversal
+    low
+else
+    if _resistance_pause[1] < close
+        _resistance_pause[1]
+    else
+        if _support_pause[1] < close
+            _support_pause[1]
+        else
+            na
+
+_resistance_pause := if _long_pause and not _long_reversal
+    high
+else
+    if _support_pause[1] > close
+        _support_pause[1]
+    else
+        if _resistance_pause[1] > close
+            _resistance_pause[1]
+        else
+            na
+
+_support_reversal := if _short_reversal
+    low
+else
+    if _support_reversal[1] < close
+        _support_reversal[1]
+    else
+        na
+
+_resistance_reversal := if _long_reversal
+    high
+else
+    if _resistance_reversal[1] > close
+        _resistance_reversal[1]
+    else
+        na
+
+//{=================================================================================== Strategy Signal =====================================================================================}
+
+_long = false
+_short = false
+
+_xlong = false
+_xshort = false
+
+var _long_count = 0
+var _short_count = 0
+
+var _when_long = 0
+var _when_short = 0
+var _when_exit = 0
+
+_in_long = _when_long > _when_short and _when_long > _when_exit
+_in_short = _when_short > _when_long and _when_short > _when_exit
+_in_exit = _when_exit > _when_long and _when_exit > _when_short
+
+if _long
+    if _in_short or _in_exit
+        _long_count := 1
+    else
+        _long_count := nz(_long_count[1]) + 1
+    _short_count := 0
+    _in_short := false
+    if _long_count <= _trades_count
+        _when_long := time
+
+if _short
+    if _in_long or _in_exit
+        _short_count := 1
+    else
+        _short_count := nz(_short_count[1]) + 1
+    _long_count := 0
+    _in_long := false
+    if _short_count <= _trades_count
+        _when_short := time
+
+if (_xlong and _in_long) or (_xshort and _in_short)
+    _when_exit := time
+
+_enter_long = _when_long == time and bar_window() and (_market_position == "Long" or _market_position == "Both")
+_enter_short = _when_short == time and bar_window() and (_market_position == "Short" or _market_position == "Both")
+_exit_trade = _when_exit == time
+
+//{==================================================================================== Strategy Draw ======================================================================================}
+
+plot(_support_pause, style=plot.style_circles, linewidth=2, color=#1ca168, transp=0)
+plot(_resistance_pause, style=plot.style_circles, linewidth=2, color=#ce2020, transp=0)
+
+plot(_support_reversal, style=plot.style_circles, linewidth=2, color=#ffc100, transp=0)
+plot(_resistance_reversal, style=plot.style_circles, linewidth=2, color=#ffc100, transp=0)
+
+plotshape(_enter_long, style=shape.triangleup, location=location.bottom, color=#1ca168)
+plotshape(_enter_short, style=shape.triangleup, location=location.bottom, color=#ce2020)
+plotshape(_exit_trade, style=shape.triangledown, location=location.bottom, color=#ffc100)
+barcolor(_enter_long ? #1ca168 : _enter_short ? #ce2020 : _exit_trade ? #ffc100 : na)
