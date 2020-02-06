@@ -113,6 +113,10 @@ A library of trading indicators, strategies and code snippets for Pine Script pr
 > ###### A rewrite of Bollinger Bands on Macd https://www.tradingview.com/script/SG9NNwvz-Bollinger-Bands-on-Macd/
 > © Dreadblitz
 
+* [Momentum with Channel Bands Indicator](/Indicators/Trend%20Indicators/Momentum%20with%20Channel%20Bands%20Indicator.pine)
+> ###### Momentum indicators with channel bands.
+> Momentum out of channel bands, price is trending and if momentum in channel bands possible pause or reversal of the current trend.
+
 ### Volatility Indicators
 ##### These technical indicators measure the rate of price movement
 * [Risk Bands Indicator](/Indicators/Volatility%20Indicators/Risk%20Bands%20Indicator.pine)
