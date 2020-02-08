@@ -45,12 +45,6 @@ A collection of trading indicators.
 * [Risk Bands Indicator](/Indicators/Volatility%20Indicators/Risk%20Bands%20Indicator.pine)
 > ###### An standalone indicator version of the stop-loss and profit-taking from Template Advance Strategy.
 
-* [Sigma Accumulate Indicator](/Indicators/Volatility%20Indicators/Sigma%20Accumulate%20Indicator.pine)
-> ###### Inspire by Action Locator indicator https://www.tradingview.com/script/4DvAvqYu-ACTION-Locator-v2-0/  
-> Show the different of fast/slow sigma (stdev) with money flow index.
-> Blue bar - fast above slow
-> Grey bar - fast under slow
-
 ### Volume Indicators
 ##### These technical indicators measure the strength of a trend based on volume
 
@@ -63,10 +57,15 @@ A collection of trading indicators.
 > ###### Support/resistance levels based on spike in BTC long/short ratio, assuming green/red candles increase/decrease the long ratio, also dramatic increase/decrease in long ratio provide support/resistance levels.
 
 * [Momentum Levels Indicator](/Indicators/Experimental%20Indicators/Momentum%20Levels%20Indicator.pine)
-> ######  Support/Resistance levels with momentum indicators and channel bands.
+> ###### Support/Resistance levels with momentum indicators and channel bands.
 > Momentum out of channel bands, price is trending and if momentum in channel bands possible pause or reversal of the current trend.
 > These pause or reversal act as support/resistance levels.
 >  
 > ###### Color Schemes:
 >  * Line: Trend Pause - Shape (circle) / Support (green) / Resistance (red)
 >  * Line: Trend Reversal - Shape (circle) / Support/Resistance (yellow)
+
+* [Sigma Accumulate Indicator](/Indicators/Experimental%20Indicators/Sigma%20Accumulate%20Indicator.pine)
+> ###### Sigma (stdev) with money flow index and using bollinger bands to extrapolated the extremes in volatility and volume.
+> ###### Color Schemes:
+> * Column: Sigma Accumulate - Shape (columns) / Rising (blue) / Falling (purple) / Normal (gray)

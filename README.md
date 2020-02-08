@@ -122,12 +122,6 @@ A library of trading indicators, strategies and code snippets for Pine Script pr
 * [Risk Bands Indicator](/Indicators/Volatility%20Indicators/Risk%20Bands%20Indicator.pine)
 > ###### An standalone indicator version of the stop-loss and profit-taking from Template Advance Strategy.
 
-* [Sigma Accumulate Indicator](/Indicators/Volatility%20Indicators/Sigma%20Accumulate%20Indicator.pine)
-> ###### Inspire by Action Locator indicator https://www.tradingview.com/script/4DvAvqYu-ACTION-Locator-v2-0/  
-> Show the different of fast/slow sigma (stdev) with money flow index.
-> Blue bar - fast above slow
-> Grey bar - fast under slow
-
 ### Volume Indicators
 ##### These technical indicators measure the strength of a trend based on volume
 
@@ -147,6 +141,11 @@ A library of trading indicators, strategies and code snippets for Pine Script pr
 > ###### Color Schemes:
 >  * Line: Trend Pause - Shape (circle) / Support (green) / Resistance (red)
 >  * Line: Trend Reversal - Shape (circle) / Support/Resistance (yellow)
+
+* [Sigma Accumulate Indicator](/Indicators/Experimental%20Indicators/Sigma%20Accumulate%20Indicator.pine)
+> ###### Sigma (stdev) with money flow index and using bollinger bands to extrapolated the extremes in volatility and volume.
+> ###### Color Schemes:
+> * Column: Sigma Accumulate - Shape (columns) / Rising (blue) / Falling (purple) / Normal (gray)
 
 ---
 ## Snippets

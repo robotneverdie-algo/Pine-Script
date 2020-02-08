@@ -2,13 +2,13 @@
 // © RobotNeverDie
 
 //@version=4
-study("Sigma Accumulate Indicator", shorttitle="Sigma Accumulate Indicator", overlay=false)
+study("Sigma Accumulate Indicator", shorttitle="Sigma Accumulate Indicator v0.1.0", overlay=false)
 
 // Description:
-// Inspire by Action Locator indicator https://www.tradingview.com/script/4DvAvqYu-ACTION-Locator-v2-0/
-// Show the different of fast/slow sigma (stdev) with money flow index.
-// Blue bar - fast above slow
-// Grey bar - fast under slow
+// Sigma (stdev) with money flow index and using bollinger bands to extrapolated the extremes in volatility and volume.
+//
+// Color Schemes:
+// * Column: Sigma Accumulate - Shape (columns) / Rising (blue) / Falling (purple) / Normal (gray)
 //
 // More at https://github.com/robotneverdie-algo/Pine-Script
 
@@ -39,7 +39,7 @@ source(x) =>
                                 vwap
 
 // Money Flow Index
-mfi(x, len) =>
+_mfi(x, len) =>
     flow = x * volume
     diff = change(x)
     up = diff > 0 ? flow : 0.0
@@ -245,6 +245,87 @@ zlema(x, len) =>
     e := a * (2 * x - x[lag]) + (1 - a) * nz(e[1])
     e
 
+// Moving Average with default settings
+moving_average1(src, type, len) =>
+    if type == "modframa"
+        modframa(src, len, 2, 198)
+    else
+        if type == "rma"
+            rma(src, len)
+        else
+            if type == "sma"
+                sma(src, len)
+            else
+                if type == "smma"
+                    smma(src, len)
+                else
+                    if type == "supersmoother"
+                        supersmoother(src, len)
+                    else
+                        if type == "tema"
+                            tema(src, len)
+                        else
+                            if type == "vama"
+                                vama(src, len, 50)
+                            else
+                                if type == "vidya"
+                                    vidya(src, len, 30)
+                                else
+                                    if type == "vwma"
+                                        vwma(src, len)
+                                    else
+                                        if type == "wma"
+                                            wma(src, len)
+                                        else
+                                            zlema(src, len)
+
+moving_average(src, type, len) =>
+    if type == "alma"
+        alma(src, len, 0.8, 10)
+    else
+        if type == "cvwma"
+            cvwma(src, len)
+        else
+            if type == "dema"
+                dema(src, len)
+            else
+                if type == "donchian"
+                    donchian(len)
+                else
+                    if type == "ecema"
+                        ecema(src, len, 50)
+                    else
+                        if type == "ema"
+                            ema(src, len)
+                        else
+                            if type == "frama"
+                                frama(src, len)
+                            else
+                                if type == "hull"
+                                    hull(src, len)
+                                else
+                                    if type == "jma"
+                                        jma(src, len, 50, 2)
+                                    else
+                                        if type == "kama"
+                                            kama(src, len, 2, 30)
+                                        else
+                                            if type == "lsma"
+                                                lsma(src, len, 0)
+                                            else
+                                                if type == "mcginley"
+                                                    mcginley(src, len, 0.6)
+                                                else
+                                                    moving_average1(src, type, len)
+
+//{==================================================================================== Channel Bands ======================================================================================}
+
+// Bollinger Bands
+bollinger(x, type, len, mult) =>
+    basis = moving_average(x, type, len)
+    volatility = stdev(x, len)
+    [basis + (volatility * mult), basis - (volatility * mult)]
+
 //{============================================================================= Backtest Date Range Setting ===============================================================================}
 
 _backtest_header = input(true, type=input.bool, title="{================== Backtest Date Range Setting =================}")
@@ -276,201 +357,26 @@ _tf = input("240", type=input.resolution, title="Timeframe")
 _market_position = input("Both", options=["Both", "Long", "Short"], title="Market Position")
 
 //{=============================================================================== Sigma Accumulate Setting ================================================================================}
+
 _sa_header = input(true, type=input.bool, title="{=================== Sigma Accumulate Setting ===================}")
-_sigma_len = input(6, minval=2, type=input.integer, title="Sigma Length")
-
-_fast_header = input(true, type=input.bool, title="{======================= Fast MA Setting ========================}")
-
-_fast_type = input("zlema", options=["alma", "cvwma", "dema", "donchian", "ecema", "ema", "frama", "hull", "jma", "kama", "lsma", "mcginley", "modframa", "rma", "sma", "smma", "supersmoother", "tema", "vama", "vidya", "vwma", "wma", "zlema"], title="Type")
-_fast_len = input(14, title="Length")
-
-_fast_alma_offset = input(0.8, step=0.01, minval=0.0, maxval=1.0, title="alma: offset")
-_fast_alma_sigma = input(10, title="alma: sigma")
-_fast_ecema_limit = input(50, title="ecema: gain limit")
-_fast_jma_phase = input(50, title="jma: phase")
-_fast_jma_power = input(2, title="jma: power")
-_fast_kama_fast = input(2, title="kama: fast")
-_fast_kama_slow = input(30, title="kama: slow")
-_fast_lsma_offset = input(0, minval=0, title="lsma: offset")
-_fast_mcginley_factor = input(0.6, step=0.01, minval=0.0, maxval=1.0, title="mcginley: smoothing factor")
-_fast_modframa_fast = input(1, title="modframa: fast")
-_fast_modframa_slow = input(198, title="modframa: slow")
-_fast_vama_lookback = input(50, title="vama: fast")
-_fast_vidya_len = input(30, title="vidya: ema length")
-
-fast_moving_average1(src, type, len) =>
-    if type == "modframa"
-        modframa(src, len, _fast_modframa_fast, _fast_modframa_slow)
-    else
-        if type == "rma"
-            rma(src, len)
-        else
-            if type == "sma"
-                sma(src, len)
-            else
-                if type == "smma"
-                    smma(src, len)
-                else
-                    if type == "supersmoother"
-                        supersmoother(src, len)
-                    else
-                        if type == "tema"
-                            tema(src, len)
-                        else
-                            if type == "vama"
-                                vama(src, len, _fast_vama_lookback)
-                            else
-                                if type == "vidya"
-                                    vidya(src, len, _fast_vidya_len)
-                                else
-                                    if type == "vwma"
-                                        vwma(src, len)
-                                    else
-                                        if type == "wma"
-                                            wma(src, len)
-                                        else
-                                            zlema(src, len)
-
-fast_moving_average(src, type, len) =>
-    if type == "alma"
-        alma(src, len, _fast_alma_offset, _fast_alma_sigma)
-    else
-        if type == "cvwma"
-            cvwma(src, len)
-        else
-            if type == "dema"
-                dema(src, len)
-            else
-                if type == "donchian"
-                    donchian(len)
-                else
-                    if type == "ecema"
-                        ecema(src, len, _fast_ecema_limit)
-                    else
-                        if type == "ema"
-                            ema(src, len)
-                        else
-                            if type == "frama"
-                                frama(src, len)
-                            else
-                                if type == "hull"
-                                    hull(src, len)
-                                else
-                                    if type == "jma"
-                                        jma(src, len, _fast_jma_phase, _fast_jma_power)
-                                    else
-                                        if type == "kama"
-                                            kama(src, len, _fast_kama_fast, _fast_kama_slow)
-                                        else
-                                            if type == "lsma"
-                                                lsma(src, len, _fast_lsma_offset)
-                                            else
-                                                if type == "mcginley"
-                                                    mcginley(src, len, _fast_mcginley_factor)
-                                                else
-                                                    fast_moving_average1(src, type, len)
-
-_slow_header = input(true, type=input.bool, title="{======================= Slow MA Setting ========================}")
-
-_slow_type = input("tema", options=["alma", "cvwma", "dema", "donchian", "ecema", "ema", "frama", "hull", "jma", "kama", "lsma", "mcginley", "modframa", "rma", "sma", "smma", "supersmoother", "tema", "vama", "vidya", "vwma", "wma", "zlema"], title="Type")
-_slow_len = input(4, title="Length")
-
-_slow_alma_offset = input(0.8, step=0.01, minval=0.0, maxval=1.0, title="alma: offset")
-_slow_alma_sigma = input(10, title="alma: sigma")
-_slow_ecema_limit = input(50, title="ecema: gain limit")
-_slow_jma_phase = input(50, title="jma: phase")
-_slow_jma_power = input(2, title="jma: power")
-_slow_kama_fast = input(2, title="kama: fast")
-_slow_kama_slow = input(30, title="kama: slow")
-_slow_lsma_offset = input(0, minval=0, title="lsma: offset")
-_slow_mcginley_factor = input(0.6, step=0.01, minval=0.0, maxval=1.0, title="mcginley: smoothing factor")
-_slow_modframa_fast = input(1, title="modframa: fast")
-_slow_modframa_slow = input(198, title="modframa: slow")
-_slow_vama_lookback = input(50, title="vama: fast")
-_slow_vidya_len = input(30, title="vidya: ema length")
-
-slow_moving_average1(src, type, len) =>
-    if type == "modframa"
-        modframa(src, len, _slow_modframa_fast, _slow_modframa_slow)
-    else
-        if type == "rma"
-            rma(src, len)
-        else
-            if type == "sma"
-                sma(src, len)
-            else
-                if type == "smma"
-                    smma(src, len)
-                else
-                    if type == "supersmoother"
-                        supersmoother(src, len)
-                    else
-                        if type == "tema"
-                            tema(src, len)
-                        else
-                            if type == "vama"
-                                vama(src, len, _slow_vama_lookback)
-                            else
-                                if type == "vidya"
-                                    vidya(src, len, _slow_vidya_len)
-                                else
-                                    if type == "vwma"
-                                        vwma(src, len)
-                                    else
-                                        if type == "wma"
-                                            wma(src, len)
-                                        else
-                                            zlema(src, len)
-
-slow_moving_average(src, type, len) =>
-    if type == "alma"
-        alma(src, len, _slow_alma_offset, _slow_alma_sigma)
-    else
-        if type == "cvwma"
-            cvwma(src, len)
-        else
-            if type == "dema"
-                dema(src, len)
-            else
-                if type == "donchian"
-                    donchian(len)
-                else
-                    if type == "ecema"
-                        ecema(src, len, _slow_ecema_limit)
-                    else
-                        if type == "ema"
-                            ema(src, len)
-                        else
-                            if type == "frama"
-                                frama(src, len)
-                            else
-                                if type == "hull"
-                                    hull(src, len)
-                                else
-                                    if type == "jma"
-                                        jma(src, len, _slow_jma_phase, _slow_jma_power)
-                                    else
-                                        if type == "kama"
-                                            kama(src, len, _slow_kama_fast, _slow_kama_slow)
-                                        else
-                                            if type == "lsma"
-                                                lsma(src, len, _slow_lsma_offset)
-                                            else
-                                                if type == "mcginley"
-                                                    mcginley(src, len, _slow_mcginley_factor)
-                                                else
-                                                    slow_moving_average1(src, type, len)
+_sigma_len = input(14, minval=2, type=input.integer, title="Sigma Length")
+_bands_type = input("ema", options=["alma", "cvwma", "dema", "donchian", "ecema", "ema", "frama", "hull", "jma", "kama", "lsma", "mcginley", "modframa", "rma", "sma", "smma", "supersmoother", "tema", "vama", "vidya", "vwma", "wma", "zlema"], title="Bollinger Mean")
+_bands_len = input(14, title="Bollinger Length")
+_bands_multi = input(1, step=0.1, title="Bollinger Multiplier")
 
 //{==================================================================================== Strategy Logic =====================================================================================}
 
 _source = _use_tf ? security(syminfo.tickerid, _tf, source(_src)) : source(_src)
 
 _sigma = stdev(_source, _sigma_len)
-_fast = fast_moving_average(_sigma, _fast_type, _fast_len)
-_sa = mfi(_fast, _fast_len)
-_slow = slow_moving_average(_sa, _slow_type, _slow_len)
+_accumulate = _mfi(_sigma, _sigma_len)
+[_upper_band, _lower_band] = bollinger(_accumulate, _bands_type, _bands_len, _bands_multi)
 
 //{=================================================================================== Strategy Signal =====================================================================================}
+
+_rising = _accumulate > _upper_band
+_falling = _accumulate < _lower_band
+_normal = not _rising and not _falling
 
 _long = false
 _short = false
@@ -518,7 +424,7 @@ _exit_trade = _when_exit == time
 
 //{==================================================================================== Strategy Draw ======================================================================================}
 
-plot(1, style=plot.style_columns, linewidth=2, color=_sa > _slow ? #407db8 : #7b8280, transp=0, title="Sigma Accumulate")
+plot(1, style=plot.style_columns, linewidth=2, color=_rising ? #01cdfe : _falling ? #a95aec : #aaaaaa, transp=0, title="Sigma Accumulate")
 
 plotshape(_enter_long, style=shape.triangleup, location=location.bottom, color=#1ca168)
 plotshape(_enter_short, style=shape.triangleup, location=location.bottom, color=#ce2020)
