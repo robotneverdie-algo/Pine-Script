@@ -83,3 +83,15 @@ A collection of trading strategies.
 >
 > ###### References/Notes:  
 > [1] IFish TCI has static moving average (zlema) due to error: Script has too many local scopes.
+
+* [Trading Strategy 001](/Strategies/Trading%20Strategy%20001.pine)
+> * Trade Setup - Squeeze Momentum
+> * Entry/Exit - Fisher Transform (Elder Force Index) and WaveTrend Oscillator
+> * Stop-Loss and Profit-Taking - None
+> * Position Sizing - None
+
+* [Trading Strategy 002](/Strategies/Trading%20Strategy%20002.pine)
+> * Trade Setup - Sigma Accumulate
+> * Entry/Exit - Fisher Transform (Elder Force Index) and Accumulative Swing Index
+> * Stop-Loss and Profit-Taking - None
+> * Position Sizing - None

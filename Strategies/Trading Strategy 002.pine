@@ -1,0 +1,514 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © RobotNeverDie
+
+//@version=4
+strategy("Trading Strategy 002", shorttitle="Trading Strategy 002 v0.1.0", overlay=false, pyramiding=100, initial_capital=10000, default_qty_type=strategy.percent_of_equity, default_qty_value=3)
+// study("Trading Strategy 002", shorttitle="Trading Strategy 002 v0.1.0", overlay=false)
+
+// Description:
+//
+// * Trade Setup - Sigma Accumulate
+// * Entry/Exit - Fisher Transform (Elder Force Index) and Accumulative Swing Index
+// * Stop-Loss and Profit-Taking - None
+// * Position Sizing - None
+//
+// More at https://github.com/robotneverdie-algo/Pine-Script
+
+//{=================================================================================== Misc. Functions =====================================================================================}
+
+source(x) =>
+    if x == "open"
+        open
+    else
+        if x == "high"
+            high
+        else
+            if x == "low"
+                low
+            else
+                if x == "close"
+                    close
+                else
+                    if x == "hl2"
+                        hl2
+                    else
+                        if x == "hlc3"
+                            hlc3
+                        else
+                            if x == "ohlc4"
+                                ohlc4
+                            else
+                                vwap
+
+//{=============================================================================== Moving Average Functions ================================================================================}
+
+// Coefficient of Variation Weighted Moving Average https://www.tradingview.com/script/0dBtJvhu-Stratus-DW/
+cvwma(x, len) =>
+    cv = stdev(x, len) / sma(x, len)
+    w = x * cv
+    sum(w, len) / sum(cv, len)
+
+// Double Exponential Moving Average
+dema(x, len) =>
+    e = ema(x, len)
+    2 * e - ema(e, len)
+
+// Donchian Middle Channel
+donchian(len) =>
+    avg(lowest(len), highest(len))
+
+// Error Corrected EMA http://www.mesasoftware.com/papers/ZeroLag.pdf
+ecema(x, len, limit) =>
+    a = 2 / (len + 1)
+    e = 0.0
+    e := a * x + (1 - a) * nz(e[1])
+    ec = 0.0
+    least_error = 1000000.0
+    best_gain = 0.0
+    for i = -limit to limit
+        gain = i / 10
+        ec := a * (e + gain * (x - ec[1])) + (1 - a) * nz(ec[1])
+        error = x - ec
+        if abs(error) < least_error
+            least_error := abs(error)
+            best_gain := gain
+    ec := a * (e + best_gain * (x - nz(ec[1]))) + (1 - a) * nz(ec[1])
+
+// clamp a number in an range
+clamp(x, xmin, xmax) =>
+    max(min(x, xmax), xmin)
+
+// Fractal Adaptive Moving Average http://www.mesasoftware.com/papers/FRAMA.pdf
+frama(x, len) =>
+    half = int(len / 2)
+    hh1 = for i = 1 to half
+        max(high[i], high[i-1])
+    ll1 = for i = 1 to half
+        min(low[i], low[i-1])
+
+    hh2 = for i = half + 1 to len
+        max(high[i], high[i-1])
+    ll2 = for i = half + 1 to len
+        min(low[i], low[i-1])
+
+    hh3 = for i = 1 to len
+        max(high[i], high[i-1])
+    ll3 = for i = 1 to len
+        min(low[i], low[i-1])
+
+    n1 = (hh1 - ll1) / half
+    n2 = (hh2 - ll2) / half
+    n3 = (hh3 - ll3) / len
+    d = 0.0
+    d := iff(n1 > 0 and n2 > 0 and n3 > 0, (log(n1 + n2) - log(n3)) / log(2), clamp(nz(d[1]), 1, 2))
+    a = exp(-4.6 * (d - 1))
+    alpha = clamp(nz(a), 0.01, 1)
+    f = 0.0
+    f := iff(bar_index > len + 1, alpha * x + (1 - alpha) * f[1], x)
+    f
+
+// Hull Moving Average
+hull(x, len) =>
+    wma(2 * wma(x, len / 2) - wma(x, len), round(sqrt(len)))
+
+// Jurik Moving Average https://www.tradingview.com/script/nZuBWW9j-Jurik-Moving-Average/
+jma(x, len, phase, power) =>
+    // Copyright (c) 2007-present Jurik Research and Consulting. All rights reserved.
+    // Copyright (c) 2018-present, Alex Orekhov (everget)
+    ratio = phase < -100 ? 0.5 : phase > 100 ? 2.5 : phase / 100 + 1.5
+    beta = 0.45 * (len - 1) / (0.45 * (len - 1) + 2)
+    alpha = pow(beta, power)
+    j = 0.0
+    e0 = 0.0
+    e1 = 0.0
+    e2 = 0.0
+    e0 := (1 - alpha) * x + alpha * nz(e0[1])
+    e1 := (x - e0) * (1 - beta) + beta * nz(e1[1])
+    e2 := (e0 + ratio * e1 - nz(j[1])) * pow(1 - alpha, 2) + pow(alpha, 2) * nz(e2[1])
+    j := e2 + nz(j[1])
+    j
+
+// Kaufman Adaptive Moving Average
+kama(x, len, fast, slow) =>
+    f = 2 / (fast + 1)
+    s = 2 / (slow + 1)
+    change = abs(change(x, len))
+    volatility = sum(abs(change(x)), len)
+    er = change / volatility
+    sc = pow(er * (f - s) + s, 2)
+    k = 0.0
+    k := nz(k[1], sma(x, len)) + sc * (x - nz(k[1], sma(x, len)))
+    k
+
+// Least Square Moving Average
+lsma(x, len, offset) =>
+   linreg(x, len, offset)
+
+// McGinley Dynamic
+mcginley(x, len, factor) =>
+    md = 0.0
+    md := na(md[1]) ? x : md[1] + (x - md[1]) / (factor * len * pow(x / md[1], 4))
+    md
+
+// Modified Fractal Adaptive Moving Average http://etfhq.com/blog/2010/09/30/fractal-adaptive-moving-average-frama/#Mod
+modframa(x, len, fast, slow) =>
+    half = int(len / 2)
+    hh1 = for i = 1 to half
+        max(high[i], high[i-1])
+    ll1 = for i = 1 to half
+        min(low[i], low[i-1])
+
+    hh2 = for i = half + 1 to len
+        max(high[i], high[i-1])
+    ll2 = for i = half + 1 to len
+        min(low[i], low[i-1])
+
+    hh3 = for i = 1 to len
+        max(high[i], high[i-1])
+    ll3 = for i = 1 to len
+        min(low[i], low[i-1])
+
+    n1 = (hh1 - ll1) / half
+    n2 = (hh2 - ll2) / half
+    n3 = (hh3 - ll3) / len
+    d = 0.0
+    d := iff(n1 > 0 and n2 > 0 and n3 > 0, (log(n1 + n2) - log(n3)) / log(2), clamp(nz(d[1]), 1, 2))
+    w = 2 / (slow + 1)
+    olda = exp(log(w) * (d - 1))
+    n = (2 - olda) / olda
+    nn = (slow - fast) * (n - 1) / (slow - 1) + fast
+    a = 2 / (nn + 1)
+    alpha = clamp(nz(a), w, 1)
+    f = 0.0
+    f := iff(bar_index > len + 1, alpha * x + (1 - alpha) * f[1], x)
+    f
+
+// Smoothed Moving Average
+smma(x, len) =>
+    s = sma(x, len)
+    s := (sum(x, len) - nz(s[1]) + x) / len
+    s
+
+// SuperSmoother Filter http://www.mesasoftware.com/papers/PredictiveIndicatorsForEffectiveTrading%20Strategies.pdf
+supersmoother(x, len) =>
+    pi = 3.14159
+    y = exp(-sqrt(2) * pi / len)
+
+    c = -y * y
+    b = 2.0 * y * cos(sqrt(2) * pi / len)
+    a = 1 - b - c
+
+    z = 0.0
+    z := iff(bar_index == 0, 0.0, iff(bar_index == 1, b * nz(z[1]), iff(bar_index == 2,  b * nz(z[1]) + c * nz(z[2]), a * ((x + nz(x[1])) / 2) + b * nz(z[1]) + c * nz(z[2]))))
+    z
+
+// Triple Exponential Moving Average
+tema(x, len) =>
+    e1 = ema(x, len)
+    e2 = ema(e1, len)
+    e3 = ema(e2, len)
+    (3 * e1) - (3 * e2) + e3
+
+// Volatility Adjusted Moving Average https://www.tradingview.com/script/ZHGCH1jf-Volatility-Adjusted-Moving-Average-JD/
+vama(x, len, lookback) =>
+    // © Copyright 2019 to present, Joris Duyck (JD)
+    mean = ema(x, len)
+    diff = x - mean
+    up = highest(diff, lookback)
+    down = lowest(diff, lookback)
+    mean + avg(up, down)
+
+// Variable Index Dynamic Average https://www.tradingview.com/script/hdrf0fXV-Variable-Index-Dynamic-Average-VIDYA/
+vidya(x, len, ema_len) =>
+    // Copyright (c) 2018-present, Alex Orekhov (everget)
+    diff = change(x, len)
+    up = diff > 0 ? diff : 0.0
+    down  = diff < 0 ? abs(diff) : 0.0
+    cmo = abs((cum(up) - cum(down)) / (cum(up) + cum(down)))
+    a = 2 / (ema_len + 1)
+    v = 0.0
+    v := x * a * cmo + nz(v[1]) * (1 - a * cmo)
+    v
+
+// Zero Lag Exponential Moving Average https://www.fmlabs.com/reference/default.htm?url=ZeroLagExpMA.htm
+zlema(x, len) =>
+    a = 2 / (len + 1)
+    lag = (len - 1) / 2
+    e = 0.0
+    e := a * (2 * x - x[lag]) + (1 - a) * nz(e[1])
+    e
+
+// Moving Average with default settings
+moving_average1(src, type, len) =>
+    if type == "modframa"
+        modframa(src, len, 2, 198)
+    else
+        if type == "rma"
+            rma(src, len)
+        else
+            if type == "sma"
+                sma(src, len)
+            else
+                if type == "smma"
+                    smma(src, len)
+                else
+                    if type == "supersmoother"
+                        supersmoother(src, len)
+                    else
+                        if type == "tema"
+                            tema(src, len)
+                        else
+                            if type == "vama"
+                                vama(src, len, 50)
+                            else
+                                if type == "vidya"
+                                    vidya(src, len, 30)
+                                else
+                                    if type == "vwma"
+                                        vwma(src, len)
+                                    else
+                                        if type == "wma"
+                                            wma(src, len)
+                                        else
+                                            zlema(src, len)
+
+moving_average(src, type, len) =>
+    if type == "alma"
+        alma(src, len, 0.8, 10)
+    else
+        if type == "cvwma"
+            cvwma(src, len)
+        else
+            if type == "dema"
+                dema(src, len)
+            else
+                if type == "donchian"
+                    donchian(len)
+                else
+                    if type == "ecema"
+                        ecema(src, len, 50)
+                    else
+                        if type == "ema"
+                            ema(src, len)
+                        else
+                            if type == "frama"
+                                frama(src, len)
+                            else
+                                if type == "hull"
+                                    hull(src, len)
+                                else
+                                    if type == "jma"
+                                        jma(src, len, 50, 2)
+                                    else
+                                        if type == "kama"
+                                            kama(src, len, 2, 30)
+                                        else
+                                            if type == "lsma"
+                                                lsma(src, len, 0)
+                                            else
+                                                if type == "mcginley"
+                                                    mcginley(src, len, 0.6)
+                                                else
+                                                    moving_average1(src, type, len)
+
+//{==================================================================================== Channel Bands ======================================================================================}
+
+// Bollinger Bands
+bollinger(x, type, len, mult) =>
+    basis = moving_average(x, type, len)
+    volatility = stdev(x, len)
+    [basis + (volatility * mult), basis - (volatility * mult)]
+
+//{================================================================================== Momentum Functions ===================================================================================}
+
+// Accumulative Swing Index https://library.tradingtechnologies.com/trade/chrt-ti-accumulative-swing-index.html
+asi(x, limit) =>
+    _tr = max(high - x[1], x[1] - low, high - low)
+    er = iff(x[1] > high, high - x[1], iff(x[1] < low, x[1] - low, 0.0))
+    sh = x[1] - open[1]
+    r = _tr - 0.5 * er + 0.25 * sh
+
+    w = (x - x[1] + 0.5 * (x - open) + 0.25 * (x[1] - open[1])) / r
+    k = max(high - x[1], x[1] - low)
+    si = 0.0
+    si := 50.0 * w * (k / limit)
+    cum(si)
+
+// Money Flow Index
+_mfi(x, len) =>
+    flow = x * volume
+    diff = change(x)
+    up = diff > 0 ? flow : 0.0
+    down  = diff < 0 ? flow : 0.0
+    ratio = sum(up, len) / sum(down, len)
+    100 - 100 / (1 + ratio)
+
+// Universal Oscillator
+agc(x) =>
+    peak = 0.0
+    peak := iff(bar_index == 0, 0.0000001, iff(abs(x) > nz(peak[1]), abs(x), 0.991 * nz(peak[1])))
+    peak
+
+universal_filter(x, type, len) =>
+    whitenoise = (x - x[2]) / 2
+    filter = moving_average(whitenoise, type, len)
+    peak = agc(filter)
+    universal = 0.0
+    universal := iff(peak != 0.0, filter / peak, nz(universal[1]))
+    universal
+
+//{============================================================================= Backtest Date Range Setting ===============================================================================}
+
+_backtest_header = input(true, type=input.bool, title="{================== Backtest Date Range Setting =================}")
+_use_date_range = input(true, type=input.bool, title="Use Date Range")
+_start_day = input(1, minval=1, maxval=31, title="Start Date")
+_start_month = input(1, minval=1, maxval=12, title="Start Month")
+_start_year = input(1950, minval=2011, title="Start Year")
+_end_day = input(1, minval=1, maxval=31, title="End Date")
+_end_month = input(1, minval=1, maxval=12, title="End Month")
+_end_year = input(2050, minval=2019, title="End Year")
+
+_start = timestamp(_start_year, _start_month, _start_day, 0, 0)
+_end = timestamp(_end_year, _end_month, _end_day, 0, 0)
+
+// Bar window Function
+bar_window() =>
+    if _use_date_range
+        time >= _start and time <= _end
+    else
+        true
+
+//{=================================================================================== Strategy Setting =====================================================================================}
+
+_strategy_header = input(true, type=input.bool, title="{====================== Strategy Settings =======================}")
+_trades_count = input(1, minval=1, title="Trades Count")
+_src = input("close", options=["open", "high", "low", "close", "hl2", "hlc3", "ohlc4", "vwap"], title="Source")
+_use_tf = input(false, type=input.bool, title="Use Different Timeframe")
+_tf = input("240", type=input.resolution, title="Timeframe")
+_market_position = input("Both", options=["Both", "Long", "Short"], title="Market Position")
+
+//{=============================================================================== Bollinger Bands Settings ================================================================================}
+
+_bands_header = input(true, type=input.bool, title="{=================== Bollinger Bands Settings ===================}")
+_bands_type = input("rma", options=["alma", "cvwma", "dema", "donchian", "ecema", "ema", "frama", "hull", "jma", "kama", "lsma", "mcginley", "modframa", "rma", "sma", "smma", "supersmoother", "tema", "vama", "vidya", "vwma", "wma", "zlema"], title="Moving Average: Type")
+
+_bands_len = input(14, title="Length")
+_bands_multi = input(0.9, step=0.1, title="Multiplier")
+
+//{=============================================================================== Sigma Accumulate Setting ================================================================================}
+
+_sigma_header = input(true, type=input.bool, title="{=================== Sigma Accumulate Setting ===================}")
+_sigma_len = input(14, minval=2, type=input.integer, title="Sigma Length")
+
+//{============================================================================= Universal Oscillator Setting ==============================================================================}
+
+_uo_header = input(true, type=input.bool, title="{================= Universal Oscillator Setting =================}")
+_uo_type = input("supersmoother", options=["alma", "cvwma", "dema", "donchian", "ecema", "ema", "frama", "hull", "jma", "kama", "lsma", "mcginley", "modframa", "rma", "sma", "smma", "supersmoother", "tema", "vama", "vidya", "vwma", "wma", "zlema"], title="Moving Average: Type")
+_uo_len = input(60, title="Length")
+
+//{=========================================================================== Accumulative Swing Index Setting ============================================================================}
+
+_asi_header = input(true, type=input.bool, title="{=============== Accumulative Swing Index Setting ===============}")
+_asi_limit = input(10000, minval=2, type=input.integer, title="asi: maximum bar limit")
+
+//{==================================================================================== Strategy Logic =====================================================================================}
+
+_source = _use_tf ? security(syminfo.tickerid, _tf, source(_src)) : source(_src)
+
+// Sigma Accumulate
+_sigma = stdev(_source, _sigma_len)
+_accumulate = _mfi(_sigma, _sigma_len)
+
+// Accumulative Swing Index
+_asi = asi(_source, _asi_limit)
+
+// Universal Oscillator
+_uo = universal_filter(_source, _uo_type, _uo_len)
+
+// Bollinger Bands
+[_accumulate_upper, _accumulate_lower] = bollinger(_accumulate, _bands_type, _bands_len, _bands_multi)
+[_asi_upper, _asi_lower] = bollinger(_asi, _bands_type, _bands_len, _bands_multi)
+[_uo_upper, _uo_lower] = bollinger(_uo, _bands_type, _bands_len, _bands_multi)
+
+//{=================================================================================== Strategy Signal =====================================================================================}
+
+_rising = _accumulate > _accumulate_upper
+_falling = _accumulate < _accumulate_lower
+_normal = not _rising and not _falling
+_trade_setup = _rising or _falling
+
+_asi_long = _asi > _asi_upper
+_asi_short = _asi < _asi_lower
+
+_uo_long = _uo > _uo_upper
+_uo_short = _uo < _uo_lower
+
+_long = _trade_setup and _asi_long and _uo_long
+_short = _trade_setup and _asi_short and _uo_short
+
+_xlong = not _short and _trade_setup and _uo_short
+_xshort = not _long and _trade_setup and _uo_long
+
+var _long_count = 0
+var _short_count = 0
+
+var _when_long = 0
+var _when_short = 0
+var _when_exit = 0
+
+_in_long = _when_long > _when_short and _when_long > _when_exit
+_in_short = _when_short > _when_long and _when_short > _when_exit
+_in_exit = _when_exit > _when_long and _when_exit > _when_short
+
+if _long
+    if _in_short or _in_exit
+        _long_count := 1
+    else
+        _long_count := nz(_long_count[1]) + 1
+    _short_count := 0
+    _in_short := false
+    if _long_count <= _trades_count
+        _when_long := time
+
+if _short
+    if _in_long or _in_exit
+        _short_count := 1
+    else
+        _short_count := nz(_short_count[1]) + 1
+    _long_count := 0
+    _in_long := false
+    if _short_count <= _trades_count
+        _when_short := time
+
+if (_xlong and _in_long) or (_xshort and _in_short)
+    _when_exit := time
+
+_enter_long = _when_long == time and bar_window() and (_market_position == "Long" or _market_position == "Both")
+_enter_short = _when_short == time and bar_window() and (_market_position == "Short" or _market_position == "Both")
+_exit_trade = _when_exit == time
+
+strategy.entry("Long", strategy.long, when=_enter_long)
+strategy.entry("Short", strategy.short, when=_enter_short)
+strategy.close_all(when=_exit_trade)
+
+//{==================================================================================== Strategy Draw ======================================================================================}
+
+plotshape(true, style=shape.diamond, location=location.top, transp=0, color=_uo_long ? #4fce57 : _uo_short ? #ff3838 : #1e4072, title="Universal Oscillator")
+
+_upper = plot(_asi_upper, linewidth=1, color=#1e4072, transp=0, title="Upper")
+_line = plot(_asi, linewidth=2, color=_asi_long ? #4fce57 : _asi_short ? #ff3838 : #1e4072, transp=0, title="Accumulative Swing Index")
+_lower = plot(_asi_lower, linewidth=1, color=#1e4072, transp=0, title="Lower")
+
+fill(_upper, _lower, color=#b2cae4, transp=75, title="Channel")
+fill(_upper, _line, color=_asi_long ? #4fce57 : na, transp=75, title="Upper Channel")
+fill(_upper, _line, color=_asi_short ? #ff3838 : na, transp=75, title="Lower Channel")
+
+plotshape(true, style=shape.square, location=location.bottom, color=_rising ? #01cdfe : _falling ? #a95aec : #aaaaaa, transp=0, title="Sigma Accumulate")
+
+plotshape(_enter_long ? _asi : na, style=shape.circle, location=location.absolute, size=size.normal, transp=25, color=#1ca168)
+plotshape(_enter_short ? _asi : na, style=shape.circle, location=location.absolute, size=size.normal, transp=25, color=#ce2020)
+plotshape(_exit_trade ? _asi : na, style=shape.circle, location=location.absolute, size=size.normal, transp=25, color=#ffc100)
+
+alertcondition(_enter_long or _enter_short, title="Long/Short", message="Long/Short")
+alertcondition(_enter_long, title="Long", message="Long")
+alertcondition(_enter_short, title="Short", message="Short")
