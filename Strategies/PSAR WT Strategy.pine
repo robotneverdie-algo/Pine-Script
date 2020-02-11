@@ -2,7 +2,7 @@
 // © RobotNeverDie
 
 //@version=4
-strategy("PSAR WT Strategy", shorttitle="PSAR WT Strategy", overlay=true, pyramiding=100, initial_capital=10000, default_qty_type=strategy.percent_of_equity, default_qty_value=3)
+strategy("PSAR WT Strategy", shorttitle="PSAR WT Strategy v0.1.0", overlay=true, pyramiding=100, initial_capital=10000, default_qty_type=strategy.percent_of_equity, default_qty_value=3)
 
 // Description:
 // An trend strategy using Parabolic SAR and WaveTrend Oscillator.

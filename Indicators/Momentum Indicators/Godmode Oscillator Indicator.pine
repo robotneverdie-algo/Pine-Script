@@ -2,7 +2,7 @@
 // © RobotNeverDie
 
 //@version=4
-study("Godmode Oscillator Indicator", shorttitle="Godmode Oscillator Indicator", overlay=false)
+study("Godmode Oscillator Indicator", shorttitle="Godmode Oscillator Indicator v0.1.0", overlay=false)
 
 // Description:
 // A rewrite of Godmode Oscillator https://www.tradingview.com/script/HL3vqXUM-Godmode-Oscillator-fresh-bread-generator-free-to-use/

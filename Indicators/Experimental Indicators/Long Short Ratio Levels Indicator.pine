@@ -2,7 +2,7 @@
 // © RobotNeverDie
 
 //@version=4
-study("Long/Short Ratio Levels Indicator", shorttitle="Long/Short Ratio Levels Indicator", overlay=true)
+study("Long/Short Ratio Levels Indicator", shorttitle="Long/Short Ratio Levels Indicator v0.1.0", overlay=true)
 
 // Description:
 // Support/resistance levels based on spike in BTC long/short ratio, assuming green/red candles increase/decrease the long ratio, also dramatic increase/decrease in long ratio provide support/resistance levels.

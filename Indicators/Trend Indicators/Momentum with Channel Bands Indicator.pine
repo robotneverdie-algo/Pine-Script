@@ -2,8 +2,8 @@
 // © RobotNeverDie
 
 //@version=4
-// strategy("Momentum with Channel Bands Indicator", shorttitle="Momentum with Channel Bands Indicator", overlay=false, pyramiding=100, initial_capital=10000, default_qty_type=strategy.percent_of_equity, default_qty_value=3)
-study("Momentum with Channel Bands Indicator", shorttitle="Momentum with Channel Bands Indicator", overlay=false)
+// strategy("Momentum with Channel Bands Indicator", shorttitle="Momentum with Channel Bands Indicator v0.1.0", overlay=false, pyramiding=100, initial_capital=10000, default_qty_type=strategy.percent_of_equity, default_qty_value=3)
+study("Momentum with Channel Bands Indicator", shorttitle="Momentum with Channel Bands Indicator v0.1.0", overlay=false)
 
 // Description:
 // Momentum indicators with channel bands.

@@ -2,7 +2,7 @@
 // © RobotNeverDie
 
 //@version=4
-study("WaveTrend Oscillator Indicator", shorttitle="WaveTrend Oscillator Indicator", overlay=false)
+study("WaveTrend Oscillator Indicator", shorttitle="WaveTrend Oscillator Indicator v0.1.0", overlay=false)
 
 // Description:
 // A rewrite of WaveTrend Oscillator. https://www.tradingview.com/script/2KE8wTuF-Indicator-WaveTrend-Oscillator-WT/

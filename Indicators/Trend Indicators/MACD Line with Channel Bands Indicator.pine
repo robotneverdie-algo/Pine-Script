@@ -2,7 +2,7 @@
 // © RobotNeverDie
 
 //@version=4
-study("MACD Line with Channel Bands Indicator", shorttitle="MACD Line with Channel Bands Indicator", overlay=false)
+study("MACD Line with Channel Bands Indicator", shorttitle="MACD Line with Channel Bands Indicator v0.1.0", overlay=false)
 
 // Description:
 // A rewrite of Bollinger Bands on Macd https://www.tradingview.com/script/SG9NNwvz-Bollinger-Bands-on-Macd/

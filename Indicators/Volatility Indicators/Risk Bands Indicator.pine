@@ -2,7 +2,7 @@
 // © RobotNeverDie
 
 //@version=4
-study("Risk Bands Indicator", shorttitle="Risk Bands Indicator", overlay=true)
+study("Risk Bands Indicator", shorttitle="Risk Bands Indicator v0.1.0", overlay=true)
 
 // Description:
 // An standalone indicator version of the stop-loss and profit-taking from Template Advance Strategy.

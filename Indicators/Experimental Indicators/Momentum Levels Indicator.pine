@@ -2,7 +2,7 @@
 // © RobotNeverDie
 
 //@version=4
-study("Momentum Levels Indicator", shorttitle="Momentum Levels Indicator", overlay=true)
+study("Momentum Levels Indicator", shorttitle="Momentum Levels Indicator v0.1.0", overlay=true)
 
 // Description:
 // Support/Resistance levels with momentum indicators and channel bands.

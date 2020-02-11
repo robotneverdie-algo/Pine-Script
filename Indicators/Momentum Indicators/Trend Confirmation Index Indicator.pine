@@ -2,7 +2,7 @@
 // © RobotNeverDie
 
 //@version=4
-study("Trend Confirmation Index Indicator", shorttitle="Trend Confirmation Index Indicator", overlay=false)
+study("Trend Confirmation Index Indicator", shorttitle="Trend Confirmation Index Indicator v0.1.0", overlay=false)
 
 // Description:
 // TCI indicator presumed if the position of an close within a candlestick provides information on whether the uptrend is gaining or losing power.
