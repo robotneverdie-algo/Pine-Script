@@ -85,10 +85,16 @@ A library of trading indicators, strategies and code snippets for Pine Script pr
 > * Position Sizing - None
 
 * [Trading Strategy 002](/Strategies/Trading%20Strategy%20002.pine)
-> * Trade Setup - Sigma Accumulate
-> * Entry/Exit - Fisher Transform (Elder Force Index) and Accumulative Swing Index
+> * Primary Confirmation - Waddah Attar Explosion
+> * Secondary Confirmation - Accumulative Swing Index
+> * Volume/Volatility - Elder Force Index
 > * Stop-Loss and Profit-Taking - None
 > * Position Sizing - None
+>
+> ###### Color Schemes:
+> * Top: Waddah Attar Explosion - Shape (diamond) / Rising (green) / Falling (red) / Below Deadzone (purple)
+> * Line: Accumulative Swing Index - Shape (line) / Rising (green) / Falling (red)
+> * Bottom: Elder Force Index - Shape (square) / Rising (blue) / Falling (purple)
 
 ---
 ## Indicators

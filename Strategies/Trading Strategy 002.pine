@@ -2,15 +2,21 @@
 // © RobotNeverDie
 
 //@version=4
-strategy("Trading Strategy 002", shorttitle="Trading Strategy 002 v0.1.0", overlay=false, pyramiding=100, initial_capital=10000, default_qty_type=strategy.percent_of_equity, default_qty_value=3)
-// study("Trading Strategy 002", shorttitle="Trading Strategy 002 v0.1.0", overlay=false)
+strategy("Trading Strategy 002", shorttitle="Trading Strategy 002 v0.2.0", overlay=false, pyramiding=100, initial_capital=10000, default_qty_type=strategy.percent_of_equity, default_qty_value=3)
+// study("Trading Strategy 002", shorttitle="Trading Strategy 002 v0.2.0", overlay=false)
 
 // Description:
 //
-// * Trade Setup - Sigma Accumulate
-// * Entry/Exit - Fisher Transform (Elder Force Index) and Accumulative Swing Index
+// * Primary Confirmation - Waddah Attar Explosion
+// * Secondary Confirmation - Accumulative Swing Index
+// * Volume/Volatility - Elder Force Index
 // * Stop-Loss and Profit-Taking - None
 // * Position Sizing - None
+//
+// Color Schemes:
+// * Top: Waddah Attar Explosion - Shape (diamond) / Rising (green) / Falling (red) / Below Deadzone (purple)
+// * Line: Accumulative Swing Index - Shape (line) / Rising (green) / Falling (red)
+// * Bottom: Elder Force Index - Shape (square) / Rising (blue) / Falling (purple)
 //
 // More at https://github.com/robotneverdie-algo/Pine-Script
 
@@ -334,29 +340,6 @@ asi(x, limit) =>
     si := 50.0 * w * (k / limit)
     cum(si)
 
-// Money Flow Index
-_mfi(x, len) =>
-    flow = x * volume
-    diff = change(x)
-    up = diff > 0 ? flow : 0.0
-    down  = diff < 0 ? flow : 0.0
-    ratio = sum(up, len) / sum(down, len)
-    100 - 100 / (1 + ratio)
-
-// Universal Oscillator
-agc(x) =>
-    peak = 0.0
-    peak := iff(bar_index == 0, 0.0000001, iff(abs(x) > nz(peak[1]), abs(x), 0.991 * nz(peak[1])))
-    peak
-
-universal_filter(x, type, len) =>
-    whitenoise = (x - x[2]) / 2
-    filter = moving_average(whitenoise, type, len)
-    peak = agc(filter)
-    universal = 0.0
-    universal := iff(peak != 0.0, filter / peak, nz(universal[1]))
-    universal
-
 //{============================================================================= Backtest Date Range Setting ===============================================================================}
 
 _backtest_header = input(true, type=input.bool, title="{================== Backtest Date Range Setting =================}")
@@ -387,67 +370,68 @@ _use_tf = input(false, type=input.bool, title="Use Different Timeframe")
 _tf = input("240", type=input.resolution, title="Timeframe")
 _market_position = input("Both", options=["Both", "Long", "Short"], title="Market Position")
 
-//{=============================================================================== Bollinger Bands Settings ================================================================================}
+//{=========================================================================== Waddah Attar Explosion Setting ==============================================================================}
 
-_bands_header = input(true, type=input.bool, title="{=================== Bollinger Bands Settings ===================}")
-_bands_type = input("rma", options=["alma", "cvwma", "dema", "donchian", "ecema", "ema", "frama", "hull", "jma", "kama", "lsma", "mcginley", "modframa", "rma", "sma", "smma", "supersmoother", "tema", "vama", "vidya", "vwma", "wma", "zlema"], title="Moving Average: Type")
-
-_bands_len = input(14, title="Length")
-_bands_multi = input(0.9, step=0.1, title="Multiplier")
-
-//{=============================================================================== Sigma Accumulate Setting ================================================================================}
-
-_sigma_header = input(true, type=input.bool, title="{=================== Sigma Accumulate Setting ===================}")
-_sigma_len = input(14, minval=2, type=input.integer, title="Sigma Length")
-
-//{============================================================================= Universal Oscillator Setting ==============================================================================}
-
-_uo_header = input(true, type=input.bool, title="{================= Universal Oscillator Setting =================}")
-_uo_type = input("supersmoother", options=["alma", "cvwma", "dema", "donchian", "ecema", "ema", "frama", "hull", "jma", "kama", "lsma", "mcginley", "modframa", "rma", "sma", "smma", "supersmoother", "tema", "vama", "vidya", "vwma", "wma", "zlema"], title="Moving Average: Type")
-_uo_len = input(60, title="Length")
+_wae_header = input(true, type=input.bool, title="{================ Waddah Attar Explosion Setting ================}")
+_fast_type = input("jma", options=["alma", "cvwma", "dema", "donchian", "ema", "frama", "hull", "jma", "kama", "lsma", "mcginley", "modframa", "rma", "sma", "smma", "supersmoother", "tema", "vama", "vidya", "vwma", "wma", "zlema"], title="MACD Line: Fast MA Type")
+_fast_len = input(30, title="MACD Line: Fast Length")
+_slow_type = input("supersmoother", options=["alma", "cvwma", "dema", "donchian", "ema", "frama", "hull", "jma", "kama", "lsma", "mcginley", "modframa", "rma", "sma", "smma", "supersmoother", "tema", "vama", "vidya", "vwma", "wma", "zlema"], title="MACD Line: Slow MA Type")
+_slow_len = input(30, title="MACD Line: Slow Length")
+_macd_multi = input(150, title="MACD Line: Multiplier")
+_macd_lookback = input(1, minval=1, title="MACD Line: Lookback")
+_dz_len = input(100, title="Dead Zone: Length")
+_dz_multi = input(3.7, step=0.1, title="Dead Zone: Multiplier")
 
 //{=========================================================================== Accumulative Swing Index Setting ============================================================================}
 
 _asi_header = input(true, type=input.bool, title="{=============== Accumulative Swing Index Setting ===============}")
-_asi_limit = input(10000, minval=2, type=input.integer, title="asi: maximum bar limit")
+_asi_type = input("ema", options=["alma", "cvwma", "dema", "donchian", "ecema", "ema", "frama", "hull", "jma", "kama", "lsma", "mcginley", "modframa", "rma", "sma", "smma", "supersmoother", "tema", "vama", "vidya", "vwma", "wma", "zlema"], title="Type")
+_asi_len = input(14, title="Length")
+_asi_multi = input(0.3, step=0.1, title="Multiplier")
+_asi_limit = input(10000, minval=2, type=input.integer, title="Maximum Bar Limit")
+
+//{=============================================================================== Elder Force Index Setting ===============================================================================}
+
+_efi_header = input(true, type=input.bool, title="{================== Elder Force Index Setting ===================}")
+_efi_src = input("close", options=["open", "high", "low", "close", "hl2", "hlc3", "ohlc4", "vwap"], title="Source")
+_efi_type = input("jma", options=["alma", "cvwma", "dema", "donchian", "ecema", "ema", "frama", "hull", "jma", "kama", "lsma", "mcginley", "modframa", "rma", "sma", "smma", "supersmoother", "tema", "vama", "vidya", "vwma", "wma", "zlema"], title="Type")
+_efi_len = input(21, title="Length")
 
 //{==================================================================================== Strategy Logic =====================================================================================}
 
 _source = _use_tf ? security(syminfo.tickerid, _tf, source(_src)) : source(_src)
 
-// Sigma Accumulate
-_sigma = stdev(_source, _sigma_len)
-_accumulate = _mfi(_sigma, _sigma_len)
+// Waddah Attar Explosion
+macd_line(src, fast_type, fast_len, slow_type, slow_len) =>
+    moving_average(src, fast_type, fast_len) - moving_average(src, slow_type, slow_len)
+_diff = (macd_line(_source, _fast_type, _fast_len, _slow_type, _slow_len) - macd_line(_source[_macd_lookback], _fast_type, _fast_len, _slow_type, _slow_len)) * _macd_multi
+_up = _diff > 0 ? _diff : na
+_down = _diff < 0 ? abs(_diff) : na
+_deadzone = atr(_dz_len) * _dz_multi
 
 // Accumulative Swing Index
 _asi = asi(_source, _asi_limit)
+[_asi_upper, _asi_lower] = bollinger(_asi, _asi_type, _asi_len, _asi_multi)
 
-// Universal Oscillator
-_uo = universal_filter(_source, _uo_type, _uo_len)
-
-// Bollinger Bands
-[_accumulate_upper, _accumulate_lower] = bollinger(_accumulate, _bands_type, _bands_len, _bands_multi)
-[_asi_upper, _asi_lower] = bollinger(_asi, _bands_type, _bands_len, _bands_multi)
-[_uo_upper, _uo_lower] = bollinger(_uo, _bands_type, _bands_len, _bands_multi)
+// Elder Force Index
+_efi = moving_average(change(source(_efi_src)) * volume, _efi_type, _efi_len)
 
 //{=================================================================================== Strategy Signal =====================================================================================}
 
-_rising = _accumulate > _accumulate_upper
-_falling = _accumulate < _accumulate_lower
-_normal = not _rising and not _falling
-_trade_setup = _rising or _falling
+_rising = rising(_efi, 1)
+_falling = falling(_efi, 1)
+
+_wae_long = rising(_up, 1) and _up > _deadzone
+_wae_short = rising(_down, 1) and _down > _deadzone
 
 _asi_long = _asi > _asi_upper
 _asi_short = _asi < _asi_lower
 
-_uo_long = _uo > _uo_upper
-_uo_short = _uo < _uo_lower
+_long = _asi_long and _wae_long and _rising
+_short = _asi_short and _wae_short and _falling
 
-_long = _trade_setup and _asi_long and _uo_long
-_short = _trade_setup and _asi_short and _uo_short
-
-_xlong = not _short and _trade_setup and _uo_short
-_xshort = not _long and _trade_setup and _uo_long
+_xlong = false
+_xshort = false
 
 var _long_count = 0
 var _short_count = 0
@@ -493,7 +477,8 @@ strategy.close_all(when=_exit_trade)
 
 //{==================================================================================== Strategy Draw ======================================================================================}
 
-plotshape(true, style=shape.diamond, location=location.top, transp=0, color=_uo_long ? #4fce57 : _uo_short ? #ff3838 : #1e4072, title="Universal Oscillator")
+_wae_color = _up > _deadzone ? (rising(_up, 1) ? #78d12f : #21753d) : _down > _deadzone ? (rising(_down, 1) ? #c4302b : #89211e) : #6300ff
+plotshape(true, style=shape.diamond, location=location.top, transp=0, color=_wae_color, title="Waddah Attar Explosion")
 
 _upper = plot(_asi_upper, linewidth=1, color=#1e4072, transp=0, title="Upper")
 _line = plot(_asi, linewidth=2, color=_asi_long ? #4fce57 : _asi_short ? #ff3838 : #1e4072, transp=0, title="Accumulative Swing Index")
@@ -503,7 +488,7 @@ fill(_upper, _lower, color=#b2cae4, transp=75, title="Channel")
 fill(_upper, _line, color=_asi_long ? #4fce57 : na, transp=75, title="Upper Channel")
 fill(_upper, _line, color=_asi_short ? #ff3838 : na, transp=75, title="Lower Channel")
 
-plotshape(true, style=shape.square, location=location.bottom, color=_rising ? #01cdfe : _falling ? #a95aec : #aaaaaa, transp=0, title="Sigma Accumulate")
+plotshape(true, style=shape.square, location=location.bottom, transp=0, color=_rising ? #01cdfe : _falling ? #a95aec : #aaaaaa, title="Elder Force Index")
 
 plotshape(_enter_long ? _asi : na, style=shape.circle, location=location.absolute, size=size.normal, transp=25, color=#1ca168)
 plotshape(_enter_short ? _asi : na, style=shape.circle, location=location.absolute, size=size.normal, transp=25, color=#ce2020)
