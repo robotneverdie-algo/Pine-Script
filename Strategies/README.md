@@ -101,3 +101,4 @@ A collection of trading strategies.
 > * Top: Waddah Attar Explosion - Shape (diamond) / Rising (green) / Falling (red) / Below Deadzone (purple)
 > * Line: Accumulative Swing Index - Shape (line) / Rising (green) / Falling (red)
 > * Bottom: Elder Force Index - Shape (square) / Rising (blue) / Falling (purple)
+> * Long/Short: Accumulative Swing Index - Shape (circle) / Long (green) / Short (red)

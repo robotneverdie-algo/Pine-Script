@@ -2,8 +2,8 @@
 // © RobotNeverDie
 
 //@version=4
-strategy("Trading Strategy 002", shorttitle="Trading Strategy 002 v0.2.0", overlay=false, pyramiding=100, initial_capital=10000, default_qty_type=strategy.percent_of_equity, default_qty_value=3)
-// study("Trading Strategy 002", shorttitle="Trading Strategy 002 v0.2.0", overlay=false)
+strategy("Trading Strategy 002", shorttitle="Trading Strategy 002 v0.3.0", overlay=false, pyramiding=100, initial_capital=10000, default_qty_type=strategy.percent_of_equity, default_qty_value=3)
+// study("Trading Strategy 002", shorttitle="Trading Strategy 002 v0.3.0", overlay=false)
 
 // Description:
 //
@@ -480,13 +480,23 @@ strategy.close_all(when=_exit_trade)
 _wae_color = _up > _deadzone ? (rising(_up, 1) ? #78d12f : #21753d) : _down > _deadzone ? (rising(_down, 1) ? #c4302b : #89211e) : #6300ff
 plotshape(true, style=shape.diamond, location=location.top, transp=0, color=_wae_color, title="Waddah Attar Explosion")
 
-_upper = plot(_asi_upper, linewidth=1, color=#1e4072, transp=0, title="Upper")
-_line = plot(_asi, linewidth=2, color=_asi_long ? #4fce57 : _asi_short ? #ff3838 : #1e4072, transp=0, title="Accumulative Swing Index")
-_lower = plot(_asi_lower, linewidth=1, color=#1e4072, transp=0, title="Lower")
+var _bias = 1
+if crossover(_asi, _asi_upper)
+    _bias := 1
+if crossunder(_asi, _asi_lower)
+    _bias := -1
 
-fill(_upper, _lower, color=#b2cae4, transp=75, title="Channel")
-fill(_upper, _line, color=_asi_long ? #4fce57 : na, transp=75, title="Upper Channel")
-fill(_upper, _line, color=_asi_short ? #ff3838 : na, transp=75, title="Lower Channel")
+_bias_line = _bias == 1 ? _asi_lower : _asi_upper
+_bias_color = _bias == 1 ? #4fce57 : #ff3838
+
+_level = plot(_bias_line, color=_bias_color)
+_line = plot(_asi, color=_bias_color, title="Accumulative Swing Index")
+_upper = plot(_bias==1 and _asi <= _asi_upper ? _asi_upper : na, style=plot.style_linebr, color=#fbc433, transp=0, title="Upper Channel")
+_lower = plot(_bias==-1 and _asi >= _asi_lower ? _asi_lower : na, style=plot.style_linebr, color=#fbc433, transp=0, title="Lower Channel")
+
+fill(_level, _line, color=_bias_color, transp=15)
+fill(_upper, _line, color=#4fce57, transp=15)
+fill(_lower, _line, color=#ff3838, transp=15)
 
 plotshape(true, style=shape.square, location=location.bottom, transp=0, color=_rising ? #01cdfe : _falling ? #a95aec : #aaaaaa, title="Elder Force Index")
 
