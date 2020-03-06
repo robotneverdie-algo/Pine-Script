@@ -69,3 +69,11 @@ A collection of trading indicators.
 > ###### Sigma (stdev) with money flow index and using bollinger bands to extrapolated the extremes in volatility and volume.
 > ###### Color Schemes:
 > * Column: Sigma Accumulate - Shape (columns) / Rising (blue) / Falling (purple) / Normal (gray)
+
+* [Fisher Z-Score Indicator](/Indicators/Experimental%20Indicators/Fisher%20Z-Score%20Indicator.pine)
+> ###### Fisher transform with z-score measurement of price and mean.
+>  
+> ###### Color Schemes:
+> * Top: Overbought - Shape (line) / 1σ/2σ (yellow)
+> * Line: Z-score of Fisher Transform - Shape (line) / Above 1σ (light blue) / Below -1σ (purple)
+> * Bottom: Oversold - Shape (line) / -1σ/-2σ (yellow)
