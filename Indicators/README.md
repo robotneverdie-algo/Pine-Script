@@ -43,7 +43,7 @@ A collection of trading indicators.
 ### Volatility Indicators
 ##### These technical indicators measure the rate of price movement
 * [Risk Bands Indicator](/Indicators/Volatility%20Indicators/Risk%20Bands%20Indicator.pine)
-> ###### An standalone indicator version of the stop-loss and profit-taking from Template Advance Strategy.
+> ###### An indicator for stop-loss and profit-taking.
 
 ### Volume Indicators
 ##### These technical indicators measure the strength of a trend based on volume
